@@ -1,1362 +1,269 @@
-# CivilWatch — Phase 1 Development Log
+# CivilWatch Laravel Backend — Development Log
 
-**Project:** Citizen Reporting System for Government  
-**Phase:** 1 — Super Admin Authentication + User CRUD  
-**Date:** August 2026  
-**Developer:** Student (Learning Laravel)
-
----
-
-## What We Built
-
-A complete Super Admin foundation for the CivilWatch system:
-
-```
-Login Page (HTML)
-      ↓
-POST /api/login  (Laravel)
-      ↓
-Token returned (Sanctum)
-      ↓
-Dashboard — stats
-      ↓
-User CRUD — list, add, edit, delete, search
-      ↓
-MySQL (civilwatch database)
-```
+**Project:** CivilWatch — Community Infrastructure & Environmental Concern Reporting System  
+**Location:** Digos City, Davao del Sur  
+**Stack:** Laravel 12 + Sanctum + MySQL + Blade (admin panel)  
+**Flutter App:** `../civ-main/` (reference — all API shapes match the Flutter models exactly)
 
 ---
 
-## Technology Stack
+## Latest Session Changes
 
-| Layer        | Technology                    |
-|--------------|-------------------------------|
-| Backend      | Laravel 12 (PHP 8.2)          |
-| Database     | MySQL / MariaDB 10.4          |
-| Auth         | Laravel Sanctum (API tokens)  |
-| ORM          | Laravel Eloquent              |
-| Frontend     | Pure HTML + CSS + Vanilla JS  |
-| API format   | REST / JSON                   |
+### Overview
+Built the complete Laravel backend and admin web panel to support the CivilWatch Flutter mobile app. The existing project already had an admin-side API (email/password login for staff). This session added the full **citizen mobile API** on top without breaking anything existing.
 
 ---
 
-## Project Structure
+### Architecture
 
 ```
-laravel/
-├── app/
-│   ├── Http/
-│   │   └── Controllers/
-│   │       ├── AuthController.php      ← Login, logout, me
-│   │       └── UserController.php      ← User CRUD + dashboard stats
-│   └── Models/
-│       └── User.php                    ← Eloquent model (mapped to civilwatch.users)
-│
-├── bootstrap/
-│   ├── app.php                         ← Registers api.php route file
-│   └── providers.php                   ← Registers SanctumServiceProvider
-│
-├── database/
-│   └── migrations/
-│       ├── 0001_01_01_000000_create_users_table.php
-│       ├── 0001_01_01_000001_create_cache_table.php
-│       ├── 0001_01_01_000002_create_jobs_table.php
-│       └── 2025_01_01_000010_create_personal_access_tokens_table.php
-│
-├── routes/
-│   ├── api.php                         ← All API endpoints
-│   └── web.php                         ← Laravel welcome page
-│
-├── public/                             ← Frontend (served directly)
-│   ├── login.html
-│   ├── dashboard.html
-│   ├── users.html
-│   ├── css/
-│   │   └── style.css
-│   └── js/
-│       ├── auth.js
-│       ├── dashboard.js
-│       └── users.js
-│
-├── .env                                ← Environment config (DB, app key, etc.)
-└── DEVLOG.md                           ← This file
+Two separate user systems running side by side:
+
+┌─────────────────────────────────────────────────┐
+│  STAFF / ADMIN                                  │
+│  Table: users (email + password_hash)           │
+│  Guard: sanctum (web session + API token)       │
+│  Routes: /api/* and /admin/* (web panel)        │
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
+│  CITIZENS (Flutter app users)                   │
+│  Table: citizens (phone + pin_hash)             │
+│  Guard: auth:citizen (Sanctum token)            │
+│  Routes: /api/mobile/*                          │
+└─────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Database
+### New Database Migrations
 
-**Database name:** `civilwatch`  
-**Server:** MariaDB 10.4 (via XAMPP/local)  
-**Connection:** `127.0.0.1:3306`
-
-### Tables Used in Phase 1
-
-| Table                   | Purpose                                      |
-|-------------------------|----------------------------------------------|
-| `users`                 | Admin accounts (super_admin, ceo, cenro)     |
-| `personal_access_tokens`| Sanctum API tokens (created by migration)   |
-| `cache`                 | Laravel cache (created by migration)         |
-| `jobs`                  | Laravel queue (created by migration)         |
-
-### users table schema
-
-```sql
-id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
-name             VARCHAR(120)
-email            VARCHAR(191) UNIQUE
-password_hash    VARCHAR(255)          -- bcrypt hashed, NOT plaintext
-role             ENUM('super_admin','ceo','cenro')
-office           VARCHAR(100) NULLABLE
-avatar_url       VARCHAR(500) NULLABLE
-is_active        TINYINT(1) DEFAULT 1
-last_login_at    DATETIME NULLABLE
-created_at       DATETIME
-updated_at       DATETIME ON UPDATE current_timestamp
-```
-
-### Seeded Users (development)
-
-| Name                 | Email                        | Role        | Password (reset) |
-|----------------------|------------------------------|-------------|------------------|
-| System Administrator | admin@civilwatch.gov.ph      | super_admin | Admin@2026       |
-| CEO Administrator    | ceo@civilwatch.gov.ph        | ceo         | (original hash)  |
-| CENRO Administrator  | cenro@civilwatch.gov.ph      | cenro       | (original hash)  |
-
-> To reset any password, use tinker:
-> ```
-> php artisan tinker
-> App\Models\User::where('email','admin@civilwatch.gov.ph')->update(['password_hash' => bcrypt('YourNewPassword')]);
-> exit
-> ```
+| File | Table | Description |
+|------|-------|-------------|
+| `2026_01_01_000001_create_citizens_table` | `citizens` | Mobile app users — phone, PIN, barangay |
+| `2026_01_01_000002_create_otp_codes_table` | `otp_codes` | OTP codes with 5-min expiry |
+| `2026_01_01_000003_create_government_offices_table` | `government_offices` | CEO, CENRO, CPWD, CDRRMO, CVO |
+| `2026_01_01_000004_create_citizen_reports_table` | `citizen_reports` | Reports from Flutter app |
+| `2026_01_01_000005_create_report_activities_table` | `report_activities` | Activity/timeline log per report |
+| `2026_01_01_000006_create_citizen_notifications_table` | `citizen_notifications` | Push-style notifications per citizen |
+| `2026_01_01_000007_create_announcements_table` | `announcements` | City announcements shown in the app |
 
 ---
 
-## Environment Configuration (.env)
+### New Eloquent Models
 
-Key settings that make the project work:
-
-```env
-APP_NAME=CivilWatch
-APP_ENV=local
-APP_KEY=base64:...         ← generated by php artisan key:generate
-APP_DEBUG=true
-APP_URL=http://localhost:8000
-
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=civilwatch     ← your MySQL database name
-DB_USERNAME=root
-DB_PASSWORD=               ← your MySQL root password
-
-SESSION_DRIVER=file        ← changed from 'database' to avoid needing sessions table
-```
+| Model | Table | Key Features |
+|-------|-------|--------------|
+| `Citizen` | `citizens` | `HasApiTokens`, pin_hash auth, `total_reports` / `resolved_reports` accessors |
+| `OtpCode` | `otp_codes` | `issue()` static — creates OTP, invalidates old ones. `findValid()` — finds unexpired unused OTP |
+| `GovernmentOffice` | `government_offices` | `toApiArray()` matches Flutter `GovernmentOffice` model. `handles_list` returns array |
+| `CitizenReport` | `citizen_reports` | `transitionTo()` — handles status change + activity log + notification in one call. `generateReferenceNumber()` → `CW-YEAR-XXXXX` |
+| `ReportActivity` | `report_activities` | `toApiArray()` matches Flutter `ActivityEntry` model |
+| `CitizenNotification` | `citizen_notifications` | `send()` static helper. `toApiArray()` matches Flutter `AppNotification` model |
+| `Announcement` | `announcements` | `published()` scope. `toApiArray()` matches Flutter `Announcement` model |
 
 ---
 
-## API Endpoints
+### Report Status Flow
 
-Base URL: `http://localhost:8000/api`
-
-### Public (no token required)
-
-| Method | Endpoint     | Description              |
-|--------|--------------|--------------------------|
-| GET    | /ping        | Health check             |
-| POST   | /login       | Login, returns token     |
-
-### Protected (requires `Authorization: Bearer {token}` header)
-
-| Method | Endpoint            | Description                  |
-|--------|---------------------|------------------------------|
-| GET    | /user               | Get current logged-in user   |
-| POST   | /logout             | Revoke token, logout         |
-| GET    | /dashboard/stats    | User counts for dashboard    |
-| GET    | /users              | List all users (+ search)    |
-| POST   | /users              | Create a new user            |
-| GET    | /users/{id}         | Get single user              |
-| PUT    | /users/{id}         | Update a user                |
-| DELETE | /users/{id}         | Delete a user                |
-
-### Request / Response Format
-
-Login request:
-```json
-POST /api/login
-{
-    "email": "admin@civilwatch.gov.ph",
-    "password": "Admin@2026"
-}
+```
+Submitted → Pending Validation → Assigned to Office → In Progress → Resolved
 ```
 
-Login success response:
-```json
-{
-    "success": true,
-    "message": "Login successful.",
-    "data": {
-        "token": "2|abc123...",
-        "user": {
-            "id": 1,
-            "name": "System Administrator",
-            "email": "admin@civilwatch.gov.ph",
-            "role": "super_admin",
-            "office": null
-        }
-    }
-}
-```
-
-Error response format:
-```json
-{
-    "success": false,
-    "message": "Invalid email or password."
-}
-```
-
-Validation error format:
-```json
-{
-    "success": false,
-    "message": "Validation failed.",
-    "errors": {
-        "email": ["The email field is required."]
-    }
-}
-```
+Each transition via `CitizenReport::transitionTo()` automatically:
+1. Updates the `status` column
+2. Creates a `ReportActivity` entry (visible in Flutter activity log)
+3. Sends a `CitizenNotification` to the report owner
 
 ---
 
-## Backend Files — What Each File Does
+### Mobile API Routes (`/api/mobile/...`)
 
-### `app/Models/User.php`
-Maps Laravel to the existing `users` table.  
-Key customizations from default:
-- `$authPasswordName = 'password_hash'` — tells Laravel the password column is named `password_hash` not `password`
-- `getAuthPassword()` override — returns the `password_hash` value for auth checks
-- `HasApiTokens` trait from Sanctum — allows token creation
-- `isSuperAdmin()` and `isActive()` helper methods
+#### Auth (public — no token needed)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/mobile/auth/send-otp` | Generates 6-digit OTP, stores it, returns it in response |
+| POST | `/api/mobile/auth/verify-otp` | Validates OTP. Returns `{ token, isNewUser }` |
+| POST | `/api/mobile/auth/register` | Creates citizen account, returns token |
+| GET  | `/api/mobile/announcements` | Published announcements — no login needed |
 
-### `app/Http/Controllers/AuthController.php`
-Handles authentication.
+#### Protected (requires `Authorization: Bearer {token}`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/mobile/auth/logout` | Revokes current token |
+| GET  | `/api/mobile/auth/me` | Citizen profile + report counts |
+| GET  | `/api/mobile/reports` | Citizen's own reports. `?status=` filter |
+| POST | `/api/mobile/reports` | Submit new report (multipart, photo optional) |
+| GET  | `/api/mobile/reports/community` | All public reports for community map |
+| GET  | `/api/mobile/reports/{id}` | Single report with full activity log |
+| GET  | `/api/mobile/notifications` | Notifications list + unread count |
+| POST | `/api/mobile/notifications/mark-all-read` | Mark all as read |
+| POST | `/api/mobile/notifications/{id}/read` | Mark one as read |
 
-- `login()` — validates email/password, checks `is_active`, verifies bcrypt hash, creates Sanctum token, updates `last_login_at`
-- `logout()` — deletes the current token
-- `me()` — returns current user's profile
+---
 
-### `app/Http/Controllers/UserController.php`
-Handles User CRUD.
+### Admin API Routes (`/api/admin/...`)
 
-- `index()` — lists all users, supports `?search=` and `?role=` query params
-- `show($id)` — returns single user
-- `store()` — creates user, hashes password with `Hash::make()`
-- `update($id)` — partial update, only updates fields that are sent
-- `destroy($id)` — deletes user, prevents self-deletion
-- `dashboardStats()` — returns total, active, admin counts
+All require a valid staff Sanctum token.
 
-### `routes/api.php`
-Registers all API endpoints.  
-Protected routes are wrapped in `Route::middleware('auth:sanctum')` — Laravel automatically rejects requests without a valid token.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET  | `/api/admin/citizen-reports` | Filtered list of citizen reports |
+| GET  | `/api/admin/citizen-reports/{id}` | Full report detail |
+| GET  | `/api/admin/citizen-reports/summary` | Dashboard stat counts |
+| GET  | `/api/admin/citizen-reports/map` | All reports with lat/lng for map |
+| POST | `/api/admin/citizen-reports/{id}/validate` | Validate report → makes it public on map |
+| POST | `/api/admin/citizen-reports/{id}/assign` | Assign to a government office |
+| POST | `/api/admin/citizen-reports/{id}/status` | Update status with optional note |
+| GET  | `/api/admin/offices` | List active offices |
+| POST | `/api/admin/offices` | Create office |
+| PUT  | `/api/admin/offices/{id}` | Update office |
+| DELETE | `/api/admin/offices/{id}` | Deactivate office |
+| GET  | `/api/admin/announcements` | List all announcements |
+| POST | `/api/admin/announcements` | Create announcement |
+| PUT  | `/api/admin/announcements/{id}` | Update announcement |
+| DELETE | `/api/admin/announcements/{id}` | Delete announcement |
 
-### `bootstrap/app.php`
-The `api:` line was added to register `routes/api.php`:
-```php
-->withRouting(
-    web: __DIR__.'/../routes/web.php',
-    api: __DIR__.'/../routes/api.php',   // ← added
-    ...
-)
+---
+
+### Admin Web Panel Routes (`/admin/...`)
+
+| Route | View | Description |
+|-------|------|-------------|
+| GET `/admin/login` | `admin.login` | Login page |
+| GET `/admin/dashboard` | `admin.dashboard` | Stats + recent reports + announcements |
+| GET `/admin/citizen-reports` | `admin.citizen-reports.index` | Filterable report table |
+| GET `/admin/citizen-reports/{id}` | `admin.citizen-reports.show` | Full detail + actions |
+| POST `/admin/citizen-reports/{id}/validate` | — | Validate + publish to map |
+| POST `/admin/citizen-reports/{id}/assign` | — | Assign to office |
+| POST `/admin/citizen-reports/{id}/status` | — | Update status |
+| GET `/admin/map` | `admin.map` | Leaflet map with color-coded pins |
+| GET `/admin/offices` | `admin.offices.index` | Add/edit/deactivate offices |
+| GET `/admin/announcements` | `admin.announcements.index` | Post/edit/delete announcements |
+
+---
+
+### New Controllers
+
+| Controller | Namespace | Responsibility |
+|------------|-----------|----------------|
+| `MobileAuthController` | `Mobile` | OTP generate, verify, register, logout, me |
+| `MobileReportController` | `Mobile` | Submit, list, community, show |
+| `MobileNotificationController` | `Mobile` | List, mark read, mark all read |
+| `MobileAnnouncementController` | `Mobile` | Public announcements list |
+| `AdminCitizenReportController` | `Admin` | API: list, show, validate, assign, status, map, summary |
+| `AdminOfficeController` | `Admin` | API: CRUD for government offices |
+| `AdminAnnouncementController` | `Admin` | API: CRUD for announcements |
+| `AdminWebController` | `Admin` | Web panel: auth, dashboard, all report/office/announcement actions |
+
+---
+
+### Blade Views Created
+
 ```
-
-### `bootstrap/providers.php`
-Sanctum service provider was registered manually because Sanctum
-was installed from local cache (no internet download):
-```php
-Laravel\Sanctum\SanctumServiceProvider::class,
+resources/views/admin/
+├── layout.blade.php              — Sidebar + topbar shell
+├── login.blade.php               — Admin login page
+├── dashboard.blade.php           — Stats grid + recent reports + announcements
+├── map.blade.php                 — Leaflet JS map (OpenStreetMap tiles)
+├── citizen-reports/
+│   ├── index.blade.php           — Filterable paginated table
+│   └── show.blade.php            — Full detail + validate/assign/status actions + timeline
+├── offices/
+│   ├── index.blade.php           — Table + create/edit modals
+│   └── _form.blade.php           — Shared form partial
+├── announcements/
+│   ├── index.blade.php           — Table + create/edit modals
+│   └── _form.blade.php           — Shared form partial
+└── partials/
+    └── status-badge.blade.php    — Reusable colored status badge
 ```
 
 ---
 
-## Frontend Files — What Each File Does
+### Config Changes
 
-All frontend files live in `public/` and are served directly by Laravel's web server.
+**`config/auth.php`**
+- Added `citizen` guard (driver: `sanctum`, provider: `citizens`)
+- Added `citizens` provider (model: `Citizen`)
 
-### `public/css/style.css`
-Single shared CSS file for all pages.  
-Pure CSS — no Bootstrap, no Tailwind.  
-Defines: layout, topbar, cards, tables, buttons, forms, modals, badges, alerts, responsive breakpoints.
+**`config/services.php`**
+- No third-party SMS config (Semaphore removed — see below)
 
-### `public/js/auth.js`
-Loaded on every page. Provides:
-- `getToken()` / `setToken()` / `removeToken()` — localStorage helpers
-- `getUser()` / `setUser()` — stores logged-in user info in localStorage
-- `requireAuth()` — redirects to login.html if no token found
-- `apiFetch(endpoint, options)` — shared fetch wrapper that auto-adds `Authorization: Bearer` header and handles 401 redirects
-- `showAlert()` / `hideAlert()` — alert helpers
-- `setFieldError()` / `clearFieldErrors()` — field validation helpers
-- `populateTopbar()` — fills in the username in the nav bar
-- Login form handler — submits to `/api/login`, saves token, redirects to dashboard
-- Logout handler — calls `/api/logout`, clears storage, redirects to login
-
-### `public/js/dashboard.js`
-Loaded on `dashboard.html`.
-- Calls `requireAuth()` to protect the page
-- Calls `GET /api/dashboard/stats` and populates the stat cards
-- Fills welcome message with logged-in user's name and role
-
-### `public/js/users.js`
-Loaded on `users.html`.
-- `loadUsers(search)` — fetches and renders the users table
-- Search and clear buttons
-- `openEditModal(id)` — fetches single user, populates modal form
-- `openDeleteModal(id, name)` — shows delete confirmation
-- Save handler — sends `POST /api/users` or `PUT /api/users/{id}`
-- Delete confirm handler — sends `DELETE /api/users/{id}`
-- All server validation errors are shown on the correct form fields
-- `escapeHtml()` — prevents XSS in table rendering
-
-### `public/login.html`
-Simple login form.  
-Fields: Email, Password.  
-On submit → `auth.js` handles the POST to `/api/login`.
-
-### `public/dashboard.html`
-Post-login landing page.  
-Shows: topbar with nav links, welcome message, 3 stat cards (total users, active users, admin count).
-
-### `public/users.html`
-User management page.  
-Features:
-- Search bar
-- Add User button
-- Table: ID, Name, Email, Role, Office, Status, Actions (Edit/Delete)
-- Add/Edit modal with form validation
-- Delete confirmation modal
+**`app/Providers/AppServiceProvider.php`**
+- Registers `Sanctum::usePersonalAccessTokenModel()` to support multi-guard tokens
 
 ---
 
-## Authentication Flow
+### Seeders
 
+| Seeder | What it creates |
+|--------|----------------|
+| `GovernmentOfficeSeeder` | CEO, CENRO, CPWD, CDRRMO, CVO with real Digos City details |
+| `AnnouncementSeeder` | 2 sample announcements |
+| `DatabaseSeeder` | Super admin account + calls both seeders above |
+
+Default admin credentials (change after first login):
 ```
-1. User opens login.html
-2. Enters email + password, clicks Login
-3. auth.js sends POST /api/login
-4. Laravel validates input
-5. Laravel finds user by email
-6. Laravel checks is_active = 1
-7. Laravel verifies password with Hash::check()
-8. Laravel creates Sanctum token in personal_access_tokens table
-9. Laravel returns { token, user }
-10. auth.js saves token to localStorage as 'cw_token'
-11. auth.js saves user to localStorage as 'cw_user'
-12. Browser redirects to dashboard.html
-
-On every subsequent request:
-- apiFetch() reads token from localStorage
-- Adds header: Authorization: Bearer {token}
-- Laravel's auth:sanctum middleware validates it
-- If invalid/missing → 401 → redirect to login
+Email:    admin@civilwatch.ph
+Password: Admin@2026!
 ```
 
 ---
 
-## Problems We Solved During Setup
+### OTP Strategy
 
-### 1. MariaDB + `php artisan db:show` error
-`db:show` queries a `performance_schema` table that doesn't exist in MariaDB 10.4.  
-**Fix:** Used `php artisan tinker` with a direct query instead for connection verification.  
-**Not a real error** — the database connection was working fine.
+Semaphore SMS was removed. OTP now works like this:
 
-### 2. `users` table already exists
-Laravel's default migration tried to create `users` but it already existed in the `civilwatch` database.  
-**Fix:** Rewrote all migrations to use `Schema::hasTable()` checks — they skip creation if the table already exists.
-
-### 3. Sanctum download failed (permission + network)
-`php artisan install:api` failed because of Windows file permission errors and GitHub connectivity issues.  
-**Fix:**
-1. Fixed vendor folder permissions with `icacls`
-2. Sanctum installed from local Composer cache (it cloned from cache, not internet)
-3. Manually created the Sanctum migration file
-4. Manually registered `SanctumServiceProvider` in `bootstrap/providers.php`
-
-### 4. `password_hash` vs `password` column name
-The existing database uses `password_hash` but Laravel's auth system expects `password`.  
-**Fix:** Two overrides in `User.php`:
-```php
-protected $authPasswordName = 'password_hash';
-
-public function getAuthPassword(): string {
-    return $this->password_hash;
-}
-```
-
-### 5. Existing password hashes used `$2b$` prefix (Python/Node bcrypt)
-Laravel uses `$2y$` prefix.  
-**Fix:** They are compatible — `Hash::check()` verified them correctly.  
-We reset the admin password anyway using tinker to have a known password.
-
-### 6. `SESSION_DRIVER=database` without sessions table
-Default `.env` had `SESSION_DRIVER=database` which requires a `sessions` table.  
-**Fix:** Changed to `SESSION_DRIVER=file` in `.env`.
+1. `POST /api/mobile/auth/send-otp` — generates a random 6-digit code, stores it in `otp_codes` with a 5-minute expiry
+2. The code is **returned in the response** for now — useful for development and testing
+3. When you're ready to add real SMS, find the `TODO` comment in `MobileAuthController::sendOtp()` and plug in your provider there
+4. The OTP verification, expiry, and invalidation logic is already complete and will work with any SMS provider
 
 ---
 
-## How to Run the Project
+### Run Commands
 
-```powershell
-# 1. Go to the Laravel folder
-cd C:\Users\User\Downloads\SERENO\prc\laravel
+```bash
+# From prc/laravel/
 
-# 2. Start the server
-php artisan serve
-
-# 3. Open in browser
-# Login:     http://localhost:8000/login.html
-# Dashboard: http://localhost:8000/dashboard.html
-# Users:     http://localhost:8000/users.html
-```
-
-Login credentials:
-- **Email:** `admin@civilwatch.gov.ph`
-- **Password:** `Admin@2026`
-
----
-
-## Complete Terminal Command Reference
-
-Every command used during this project with full error and fix coverage.
-All commands run from inside the Laravel folder unless stated otherwise.
-
-```powershell
-cd C:\Users\User\Downloads\SERENO\prc\laravel
-```
-
-> Format for each section:
-> 1. Command to run
-> 2. What success looks like
-> 3. Every error you might see and exactly how to fix it
-
----
-
-## Security Notes
-
-- Passwords are always stored as bcrypt hashes — never plaintext
-- MySQL credentials are in `.env` only — never in PHP or JavaScript files
-- The browser never connects directly to MySQL
-- All protected API endpoints require a valid Sanctum token
-- Tokens are invalidated on logout (deleted from `personal_access_tokens`)
-- Laravel validates all input server-side — client JS validation is a convenience only
-- `password_hash` is listed in `$hidden` — it never appears in API responses
-- Self-deletion is blocked — an admin cannot delete their own account
-
----
-
-## What's Not Built Yet (Future Phases)
-
-| Feature                        | Phase |
-|--------------------------------|-------|
-| Citizen report submission      | 2     |
-| Report categories + reference numbers | 2 |
-| Report assignment to CEO/CENRO | 3     |
-| Report status updates          | 3     |
-| Report timeline / audit log    | 3     |
-| Before/after photo uploads     | 3     |
-| SMS OTP authentication         | 4     |
-| GPS / map integration          | 4     |
-| Flutter mobile app             | 5     |
-| Notifications                  | 5     |
-
----
-
-## Database Tables Ready for Future Phases
-
-These tables already exist in the `civilwatch` database but are not yet used:
-
-| Table               | Purpose                              |
-|---------------------|--------------------------------------|
-| `reports`           | Citizen-submitted reports            |
-| `report_assignments`| Which office a report is assigned to |
-| `report_photos`     | Before/after photos (Cloudinary)     |
-| `report_timeline`   | Audit log of all report status changes |
-| `notifications`     | In-app notifications                 |
-
----
-
-*End of Phase 1 Development Log*
-
----
-
-### 1. Installing PHP, Composer, and Laravel
-
-```powershell
-# Run this in PowerShell as Administrator — installs everything at once
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.5'))
-```
-
-**Success:** No red errors. Close and reopen PowerShell. Then verify:
-
-```powershell
-php --version       # PHP 8.x.x
-composer --version  # Composer 2.x.x
-laravel --version   # Laravel Installer x.x.x
-```
-
-**Errors and fixes:**
-
-**`running scripts is disabled on this system`**
-```powershell
-# You did not run PowerShell as Administrator.
-# Right-click PowerShell → "Run as Administrator" → retry the command.
-```
-
-**`php is not recognized` after install**
-```powershell
-# PHP was not added to PATH automatically. Add it manually:
-[System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Users\User\.config\herd-lite\bin", "User")
-# Close and reopen PowerShell, then run: php --version
-```
-
-**`composer is not recognized` after install**
-```powershell
-# Download Composer installer manually from: https://getcomposer.org/Composer-Setup.exe
-# Run the .exe installer, follow the steps, then reopen PowerShell.
-```
-
-**`laravel is not recognized` after install**
-```powershell
-# Install the Laravel installer via Composer:
-composer global require laravel/installer
-# Add Composer global bin to PATH:
-[System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Users\User\AppData\Roaming\Composer\vendor\bin", "User")
-# Reopen PowerShell, then run: laravel --version
-```
-
-**`Could not create SSL/TLS secure channel`**
-```powershell
-# Your machine is blocking the HTTPS download.
-# Open this URL in Chrome/Edge and save the file manually:
-# https://php.new/install/windows/8.5
-# Then run: iex (Get-Content .\install.ps1 -Raw)
-```
-
-**Terminal just hangs — nothing happens**
-```
-Press Ctrl+C to cancel. Wait a few seconds. Retry the command.
-If it keeps hanging, check your internet connection.
-```
-
----
-
-### 2. Creating the Laravel Project
-
-```powershell
-cd C:\Users\User\Downloads\SERENO\prc
-composer create-project laravel/laravel laravel
-cd laravel
-```
-
-**Success:** Last line says `Application ready!` and the `laravel\` folder is created.
-
-**Errors and fixes:**
-
-**`Could not resolve packagist.org`**
-```
-No internet connection. Connect to the internet and retry.
-```
-
-**`The "laravel" directory already exists`**
-```powershell
-# Either delete the existing folder and retry:
-Remove-Item -Recurse -Force laravel
-composer create-project laravel/laravel laravel
-
-# OR if the folder exists and just needs dependencies:
-cd laravel
-composer install
-```
-
-**`Your PHP version does not satisfy requirements`**
-```powershell
-# Your PHP is too old. Re-run the php.new install script (Section 1).
-# Then verify: php --version  (must be 8.2 or higher)
-```
-
-**Download stops halfway / hangs**
-```powershell
-# Press Ctrl+C. Then resume:
-cd laravel
-composer install
-# Composer will pick up from where it stopped.
-```
-
-**`vendor folder is missing` after creation**
-```powershell
-cd C:\Users\User\Downloads\SERENO\prc\laravel
-composer install
-```
-
----
-
-### 3. Generating the App Key
-
-```powershell
-php artisan key:generate
-```
-
-**Success:** `INFO Application key set successfully.`
-The `.env` file now has `APP_KEY=base64:...` filled in.
-
-**Errors and fixes:**
-
-**`php is not recognized`**
-```powershell
-# PHP is not in PATH. See Section 1 fix for "php is not recognized".
-```
-
-**`No application encryption key has been specified`** (when running other commands)
-```powershell
-# You forgot to run key:generate. Run it now:
-php artisan key:generate
-```
-
-**`Could not open input file: artisan`**
-```powershell
-# You are not in the Laravel folder. Navigate there first:
-cd C:\Users\User\Downloads\SERENO\prc\laravel
-php artisan key:generate
-```
-
-**`.env file not found`**
-```powershell
-# .env does not exist. Create it from the example file:
-Copy-Item .env.example .env
-php artisan key:generate
-```
-
----
-
-### 4. Starting the Development Server
-
-```powershell
-php artisan serve
-```
-
-**Success:**
-```
-INFO  Server running on [http://127.0.0.1:8000].
-Press Ctrl+C to stop the server
-```
-
-Open browser → `http://localhost:8000` → Laravel welcome page appears.
-
-**Keep this terminal open the entire time you are developing.**
-Open a second PowerShell window for all other commands.
-
-**Errors and fixes:**
-
-**`Failed to listen on 127.0.0.1:8000 (reason: Address already in use)`**
-```powershell
-# Port 8000 is already being used by another process.
-# Option A — use a different port:
-php artisan serve --port=8001
-# Then open: http://localhost:8001
-
-# Option B — find and kill what is using port 8000:
-netstat -ano | findstr :8000
-# Look for the PID number at the end of the line, then:
-taskkill /PID <that-number> /F
-# Then retry: php artisan serve
-```
-
-**`No application encryption key has been specified`**
-```powershell
-# Run this first, then retry serve:
-php artisan key:generate
-php artisan serve
-```
-
-**`SQLSTATE: Connection refused` on startup**
-```powershell
-# MySQL is not running. Start it:
-# Open Windows Services (Win+R → services.msc)
-# Find "MySQL80" or "MariaDB" → Right-click → Start
-# Then retry: php artisan serve
-```
-
-**Page shows `404 Not Found` in browser**
-```
-You opened http://localhost:8000 but the server is not running.
-Make sure php artisan serve is running in another terminal window.
-```
-
-**`php artisan serve` closes immediately with no output**
-```powershell
-# Check for errors with verbose output:
-php artisan serve --verbose
-# The error message will tell you what is wrong.
-```
-
----
-
-### 5. Configuring the Database (.env)
-
-After editing `.env`, always clear the config cache:
-
-```powershell
-php artisan config:clear
-```
-
-**Success:** `INFO Configuration cache cleared successfully.`
-
-Then verify the connection via tinker:
-
-```powershell
-php artisan tinker
-DB::connection()->getPdo();
-exit
-```
-
-**Success:** Returns a `PDO object(...)` — connection is working.
-
-**Errors and fixes:**
-
-**`SQLSTATE[HY000] [1045] Access denied for user 'root'@'localhost'`**
-```
-Wrong username or password in .env.
-Open .env and check:
-  DB_USERNAME=root
-  DB_PASSWORD=your_actual_mysql_password
-
-Then run:
-  php artisan config:clear
-  php artisan tinker
-  DB::connection()->getPdo();
-```
-
-**`SQLSTATE[HY000] [2002] Connection refused`**
-```
-MySQL is not running.
-Open Windows Services → Find MySQL80 or MariaDB → Start it.
-Then retry.
-```
-
-**`SQLSTATE[HY000] [1049] Unknown database 'civilwatch'`**
-```powershell
-# The database does not exist yet. Create it:
-mysql -u root -p -e "CREATE DATABASE civilwatch CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-# Enter your MySQL password when asked.
-# Then retry the tinker connection check.
-```
-
-**`SQLSTATE[HY000] [2002] No such file or directory`**
-```
-Laravel is trying to connect via a socket instead of TCP.
-In .env make sure you have:
-  DB_HOST=127.0.0.1    ← use IP, NOT "localhost"
-Then: php artisan config:clear
-```
-
-**`php artisan db:show` throws performance_schema error (MariaDB)**
-```
-This is a known bug between Laravel's db:show command and MariaDB 10.4.
-It is NOT a real connection failure. Ignore it.
-Use tinker instead to verify the connection (shown above).
-```
-
-**Config changes not taking effect**
-```powershell
-# .env changes are cached. Always run this after editing .env:
-php artisan config:clear
-```
-
----
-
-### 6. Running Migrations
-
-```powershell
 php artisan migrate
-```
-
-**Success:** Each migration file listed with `DONE` next to it.
-
-**Errors and fixes:**
-
-**`SQLSTATE[42S01]: Base table or view already exists`**
-```
-The table already exists in your database (common when you have an
-existing database like civilwatch).
-
-Fix: Rewrite the migration to use Schema::hasTable() checks:
-
-  public function up(): void
-  {
-      if (! Schema::hasTable('users')) {
-          Schema::create('users', function (Blueprint $table) {
-              // ...
-          });
-      }
-  }
-
-Then run: php artisan migrate
-```
-
-**`Nothing to migrate`**
-```
-All migrations have already run. This is fine.
-If you just created a new migration file and it is not running:
-  php artisan migrate:status
-  # Check if your new file appears in the list.
-  # If not, check the filename format: YYYY_MM_DD_HHMMSS_name.php
-```
-
-**`Class not found` during migration**
-```powershell
-# Autoload files are stale. Regenerate them:
-composer dump-autoload
-php artisan migrate
-```
-
-**`SQLSTATE[HY000] [2002] Connection refused`**
-```
-MySQL is not running. Start it from Windows Services, then retry.
-```
-
-**Want to start fresh and re-run all migrations**
-```powershell
-# WARNING: This drops ALL tables and re-creates them.
-# Only use on a fresh development database — never on real data.
-php artisan migrate:fresh
-```
-
-**Roll back only the last batch**
-```powershell
-php artisan migrate:rollback
-# Then re-run:
-php artisan migrate
-```
-
-**Check which migrations have run**
-```powershell
-php artisan migrate:status
-# Shows each file and whether it has been run (Yes/No)
-```
-
----
-
-### 7. Installing Laravel Sanctum
-
-```powershell
-php artisan install:api
-```
-
-**Success:** Migration published + Sanctum discovered.
-
-**Errors and fixes:**
-
-**`Failed to open stream: Permission denied` when writing to vendor/**
-```powershell
-# Windows is blocking writes to the vendor folder.
-# Fix the permissions:
-icacls "C:\Users\User\Downloads\SERENO\prc\laravel\vendor" /grant "User:(OI)(CI)F" /T
-# Expected last line: Successfully processed XXXX files; Failed processing 0 files
-# Then retry:
-composer require laravel/sanctum --prefer-dist --no-interaction
-```
-
-**`Could not resolve host: github.com`**
-```powershell
-# No internet or GitHub is blocked on your network.
-# Sanctum may already be in your local Composer cache. Try:
-composer require laravel/sanctum --prefer-dist --no-interaction
-# If it says "Cloning from cache" — it worked without internet.
-
-# If that also fails, check if Sanctum folder exists but is empty:
-Test-Path "C:\Users\User\Downloads\SERENO\prc\laravel\vendor\laravel\sanctum"
-# If True but empty — permissions were the issue. Run the icacls fix above.
-```
-
-**`Trait "Laravel\Sanctum\HasApiTokens" not found`**
-```
-Sanctum folder exists but is empty — the download failed silently.
-Fix sequence:
-  1. icacls fix (shown above)
-  2. composer require laravel/sanctum --prefer-dist --no-interaction
-  3. Check it installed: composer show laravel/sanctum
-  4. Add to bootstrap/providers.php:
-       Laravel\Sanctum\SanctumServiceProvider::class,
-  5. php artisan config:clear
-  6. php artisan tinker  ← should open without error now
-```
-
-**`API routes file already exists`**
-```
-Not an error. It just means routes/api.php was already there.
-The migration was still published. Continue normally.
-```
-
-**`personal_access_tokens table missing` after install**
-```powershell
-# The migration was published but not run. Run it:
-php artisan migrate
-# Expected: 2025_01_01_000010_create_personal_access_tokens_table ... DONE
-
-# Verify the table exists:
-php artisan tinker
-Schema::hasTable('personal_access_tokens');
-# Expected: true
-exit
-```
-
----
-
-### 8. Cache Management
-
-```powershell
-# Clear all caches at once — safe to run any time
-php artisan config:clear
-php artisan route:clear
-php artisan cache:clear
-```
-
-**Success:** Three `INFO ... cleared successfully.` lines.
-
-**When to run each one:**
-
-| Command | Run when |
-|---|---|
-| `config:clear` | After editing `.env` or any file in `config/` |
-| `route:clear` | After adding, changing, or removing routes in `api.php` or `web.php` |
-| `cache:clear` | After any unexpected behaviour that might be a stale cache issue |
-
-**Errors and fixes:**
-
-**`Unable to create file ... Permission denied`**
-```powershell
-# Laravel cannot write to the storage/framework/cache folder.
-# Fix permissions:
-icacls "C:\Users\User\Downloads\SERENO\prc\laravel\storage" /grant "User:(OI)(CI)F" /T
-icacls "C:\Users\User\Downloads\SERENO\prc\laravel\bootstrap\cache" /grant "User:(OI)(CI)F" /T
-# Then retry the clear commands.
-```
-
-**Changes to .env not taking effect even after config:clear**
-```powershell
-# Also clear the bootstrap cache file manually:
-Remove-Item "C:\Users\User\Downloads\SERENO\prc\laravel\bootstrap\cache\config.php" -ErrorAction SilentlyContinue
-Remove-Item "C:\Users\User\Downloads\SERENO\prc\laravel\bootstrap\cache\routes-v7.php" -ErrorAction SilentlyContinue
-php artisan config:clear
+php artisan db:seed
+php artisan storage:link     # required for photo uploads to work
 php artisan serve
 ```
 
----
-
-### 9. Checking Routes
-
-```powershell
-php artisan route:list --path=api
-```
-
-**Success:** Shows all 10 routes for this project:
-```
-GET|HEAD  api/ping
-POST      api/login
-GET|HEAD  api/user
-POST      api/logout
-GET|HEAD  api/dashboard/stats
-GET|HEAD  api/users
-POST      api/users
-GET|HEAD  api/users/{id}
-PUT       api/users/{id}
-DELETE    api/users/{id}
-```
-
-**Errors and fixes:**
-
-**A route is missing from the list**
-```
-Open routes/api.php and check:
-  - The Route:: line is correct (right method and path)
-  - The controller class name is correct
-  - The method name is correct
-  - bootstrap/app.php has: api: __DIR__.'/../routes/api.php'
-Then: php artisan route:clear
-     php artisan route:list --path=api
-```
-
-**`Target class [App\Http\Controllers\SomeController] does not exist`**
-```powershell
-# The controller file is missing or has a typo in the filename/namespace.
-# Check the file exists:
-Test-Path "C:\Users\User\Downloads\SERENO\prc\laravel\app\Http\Controllers\SomeController.php"
-
-# Check the namespace at the top of the controller file matches:
-# namespace App\Http\Controllers;
-
-# Regenerate autoload:
-composer dump-autoload
-```
-
-**`Method Not Allowed` when testing a route in browser**
-```
-You are using GET in the browser but the route is POST (like /api/login).
-The browser address bar always sends GET.
-Use PowerShell Invoke-RestMethod or Bruno API client to send POST requests.
-This is expected behaviour — not a bug.
-```
-
-**Route returns 404 even though it is in the list**
-```powershell
-# Stale route cache. Clear it:
-php artisan route:clear
-# If still 404, make sure php artisan serve is running
-# and you are using the correct URL: http://localhost:8000/api/...
-```
+Web panel: `http://localhost:8000/admin/login`  
+API base:  `http://localhost:8000/api/mobile/`
 
 ---
 
-### 10. Tinker (PHP Interactive Shell)
+### Flutter API Field Mapping
 
-```powershell
-php artisan tinker
-```
+All API response shapes were built to match the Flutter models exactly:
 
-**Success:** Shows `Psy Shell` prompt — you are now in a PHP REPL.
-Type PHP code and press Enter to execute. Type `exit` to quit.
-
-**IMPORTANT:** Tinker is PHP, not PowerShell.
-Do NOT type PowerShell commands inside tinker — they will fail.
-
-**Errors and fixes:**
-
-**`Trait "Laravel\Sanctum\HasApiTokens" not found` when opening tinker**
-```
-Sanctum is not properly installed.
-See Section 7 (Installing Sanctum) for the full fix sequence.
-```
-
-**`Class App\Models\User not found` inside tinker**
-```powershell
-# Exit tinker first:
-exit
-
-# Regenerate autoload files:
-composer dump-autoload
-
-# Reopen tinker:
-php artisan tinker
-App\Models\User::count();
-```
-
-**`SQLSTATE` errors inside tinker**
-```
-The database is not connected or MySQL is not running.
-Exit tinker, check your .env, start MySQL, then:
-  php artisan config:clear
-  php artisan tinker
-  DB::connection()->getPdo();
-```
-
-**Typed PHP code directly in PowerShell by mistake (not inside tinker)**
-```
-Symptoms: PowerShell shows parser errors like:
-  "You must provide a value expression following the '-' operator"
-  "Unexpected token '='"
-
-This means you never got inside tinker.
-Tinker crashed on startup (usually a missing trait or class).
-Fix the underlying error first (see above), then reopen tinker.
-```
-
-**Tinker shows output but the database was not changed**
-```
-Check that the query returned 1 (rows affected):
-  App\Models\User::where('email','...')->update([...]);
-  # Should return: 1
-
-If it returns 0, the where() condition did not match any row.
-Double-check the email address spelling.
-```
+| Flutter Model | Laravel Source | Key fields |
+|---------------|---------------|------------|
+| `AppUser` | `Citizen` | `id`, `fullName`, `phoneNumber`, `barangay`, `joinedDate`, `totalReports`, `resolvedReports` |
+| `IncidentReport` | `CitizenReport` | `id`, `referenceNumber`, `category`, `issue`, `description`, `barangay`, `status`, `severity`, `submittedAt`, `resolvedAt`, `imageUrl`, `latitude`, `longitude`, `assignedOffice`, `activityLog` |
+| `ActivityEntry` | `ReportActivity` | `title`, `description`, `timestamp`, `status` |
+| `AppNotification` | `CitizenNotification` | `id`, `title`, `message`, `referenceNumber`, `status`, `timestamp`, `isRead` |
+| `Announcement` | `Announcement` | `id`, `title`, `body`, `date` |
+| `GovernmentOffice` | `GovernmentOffice` | `id`, `name`, `abbreviation`, `handles` (array), `contactNumber`, `email`, `address` |
 
 ---
 
-### 11. Testing API Endpoints via PowerShell
+### Reference Number Format
 
-Run these in a **second PowerShell window** while `php artisan serve` is running in the first.
-
-```powershell
-# Health check — always test this first
-Invoke-RestMethod -Uri "http://localhost:8000/api/ping" `
-    -Method GET -Headers @{"Accept"="application/json"}
+```
+CW-{YEAR}-{5-digit-padded-sequence}
+Example: CW-2026-00125
 ```
 
-**Success:** `{ "success": true, "message": "CivilWatch API is running." }`
-
-**Errors and fixes:**
-
-**`Unable to connect to the remote server`**
-```
-php artisan serve is not running.
-Go to your first terminal window and run: php artisan serve
-Then retry.
-```
-
-**`The response content cannot be parsed`**
-```powershell
-# Use ConvertTo-Json to see the raw response:
-Invoke-RestMethod -Uri "http://localhost:8000/api/ping" `
-    -Method GET -Headers @{"Accept"="application/json"} | ConvertTo-Json
-```
-
-**`401 Unauthorized` on protected endpoints**
-```powershell
-# Your token is missing or wrong.
-# Re-login to get a fresh token:
-$login = Invoke-RestMethod -Uri "http://localhost:8000/api/login" `
-    -Method POST -ContentType "application/json" `
-    -Body '{"email":"admin@civilwatch.gov.ph","password":"Admin@2026"}'
-$token = $login.data.token
-
-# Then use it:
-$headers = @{
-    "Authorization" = "Bearer $token"
-    "Accept"        = "application/json"
-    "Content-Type"  = "application/json"
-}
-```
-
-**`403 Forbidden` response**
-```
-The account exists but is deactivated (is_active = 0).
-Fix in tinker:
-  App\Models\User::where('email','admin@civilwatch.gov.ph')->update(['is_active' => 1]);
-```
-
-**`{ "success": false, "message": "Invalid email or password." }`**
-```powershell
-# Wrong password. Reset it in tinker:
-php artisan tinker
-App\Models\User::where('email','admin@civilwatch.gov.ph')
-    ->update(['password_hash' => bcrypt('Admin@2026')]);
-exit
-# Then retry login.
-```
-
-**`422 Unprocessable Content` with validation errors**
-```
-Your request body is missing required fields or has wrong values.
-Check the errors object in the response — it tells you exactly which field failed.
-```
-
-**`405 Method Not Allowed`**
-```
-You are using the wrong HTTP method for that endpoint.
-Example: GET on /api/login instead of POST.
-Check routes/api.php for the correct method.
-```
-
-**`500 Internal Server Error`**
-```powershell
-# A PHP error occurred in your code.
-# Check the Laravel log for the real error message:
-Get-Content "C:\Users\User\Downloads\SERENO\prc\laravel\storage\logs\laravel.log" -Tail 50
-# The last few lines will show the exception and line number.
-```
+Generated by `CitizenReport::generateReferenceNumber()` — counts reports for the current year and zero-pads to 5 digits.
 
 ---
 
-### 12. Composer Commands
+### 22 Barangays (Digos City, Davao del Sur)
 
-```powershell
-# Install all dependencies (run after cloning or when vendor/ is missing)
-composer install
-```
-
-**Success:** `Generating optimized autoload files` then done.
-
-**Errors and fixes:**
-
-**`No composer.json file found`**
-```powershell
-# You are in the wrong folder.
-cd C:\Users\User\Downloads\SERENO\prc\laravel
-composer install
-```
-
-**`Your requirements could not be resolved`**
-```powershell
-# A version conflict between packages. Try:
-composer install --ignore-platform-reqs
-# If still failing, delete composer.lock and retry:
-Remove-Item composer.lock
-composer install
-```
-
-**`Failed to open stream: Permission denied` during install**
-```powershell
-# Fix vendor folder permissions first:
-icacls "C:\Users\User\Downloads\SERENO\prc\laravel\vendor" /grant "User:(OI)(CI)F" /T
-composer install
-```
-
-**`Class not found` errors after install**
-```powershell
-# Autoloader is stale. Regenerate it:
-composer dump-autoload
-```
-
-**`Connection timeout` when requiring a package**
-```powershell
-# No internet or slow connection.
-# Try with increased timeout:
-composer require laravel/sanctum --prefer-dist --no-interaction
-# Composer will fall back to local cache if available.
-```
-
----
-
-### 13. Reading the Laravel Error Log
-
-When something breaks and the error message is not helpful, always check the log:
-
-```powershell
-# Show the last 50 lines of the log
-Get-Content "C:\Users\User\Downloads\SERENO\prc\laravel\storage\logs\laravel.log" -Tail 50
-```
-
-**What to look for:**
-- `[ERROR]` or `[CRITICAL]` lines — these are the real errors
-- The file path and line number — tells you exactly where the error is
-- `SQLSTATE` — a database error
-- `Class not found` — an autoload or missing file issue
-- `Target class does not exist` — controller name typo or missing file
-
-**Log file is too big / hard to read:**
-```powershell
-# Clear the log file to start fresh:
-Clear-Content "C:\Users\User\Downloads\SERENO\prc\laravel\storage\logs\laravel.log"
-# Reproduce the error, then check the log again.
-```
-
-**No log file exists:**
-```powershell
-# Check the storage folder has write permissions:
-icacls "C:\Users\User\Downloads\SERENO\prc\laravel\storage" /grant "User:(OI)(CI)F" /T
-```
-
----
-
-### 14. Checking the Project Is Healthy (Master Checklist)
-
-Run these in order any time something seems broken:
-
-```powershell
-# 1. Are you in the right folder?
-pwd
-# Must show: C:\Users\User\Downloads\SERENO\prc\laravel
-
-# 2. Is PHP working?
-php --version
-# Must show: PHP 8.x.x
-
-# 3. Is Laravel installed?
-php artisan --version
-# Must show: Laravel Framework 12.x.x
-
-# 4. Is MySQL running?
-php artisan tinker
-DB::connection()->getPdo();
-exit
-# Must return a PDO object — not an error
-
-# 5. Did all migrations run?
-php artisan migrate:status
-# All rows should show "Yes" in the Ran column
-
-# 6. Are all routes registered?
-php artisan route:list --path=api
-# Must show all 10 routes
-
-# 7. Clear all caches
-php artisan config:clear
-php artisan route:clear
-php artisan cache:clear
-
-# 8. Start the server
-php artisan serve
-
-# 9. Test the API
-# Open second PowerShell window:
-Invoke-RestMethod -Uri "http://localhost:8000/api/ping" -Method GET -Headers @{"Accept"="application/json"}
-# Must return: { "success": true, "message": "CivilWatch API is running." }
-```
-
----
-
-### 15. Moving the Project to Another Machine
-
-```powershell
-# 1. Copy the entire laravel\ folder to the new machine
-#    (skip the vendor\ folder — it is regenerated by composer install)
-
-# 2. Open PowerShell in the new machine and navigate to the folder
-cd C:\path\to\laravel
-
-# 3. Install all PHP dependencies
-composer install
-
-# 4. Create .env from the example
-Copy-Item .env.example .env
-
-# 5. Edit .env and update these values:
-#    APP_KEY=          ← leave blank, generate it below
-#    DB_DATABASE=civilwatch
-#    DB_USERNAME=root
-#    DB_PASSWORD=your_mysql_password_on_new_machine
-
-# 6. Generate app key
-php artisan key:generate
-
-# 7. Create the database on the new MySQL server
-mysql -u root -p -e "CREATE DATABASE civilwatch CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# 8. Import your database dump (the SQL file from phpMyAdmin)
-mysql -u root -p civilwatch < civilwatch_dump.sql
-
-# 9. Run any migrations that are not in the dump
-php artisan migrate
-
-# 10. Start the server
-php artisan serve
-
-# 11. Reset passwords since bcrypt hashes are environment-specific
-php artisan tinker
-App\Models\User::where('email','admin@civilwatch.gov.ph')
-    ->update(['password_hash' => bcrypt('Admin@2026')]);
-exit
-```
-
-**Errors and fixes on a new machine:**
-
-**`vendor folder missing` after copying**
-```powershell
-composer install
-```
-
-**`No such file: artisan`**
-```powershell
-# You copied only part of the project. Make sure you copied the full laravel\ folder.
-# The artisan file must be at the root: laravel\artisan
-```
-
-**`APP_KEY` is empty or wrong**
-```powershell
-php artisan key:generate
-```
-
-**`SQLSTATE: Unknown database`**
-```powershell
-mysql -u root -p -e "CREATE DATABASE civilwatch CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-php artisan config:clear
-```
+Aplaya, Badiang, Balabag, Binaton, Cogon, Colorado, Dawis, Dulangan, Goma, Igpit, Kapatagan, Kiagdan, Matti, New Visayas, Rizal, San Jose, San Miguel, Soong, Tres de Mayo, Zone 1, Zone 2, Zone 3

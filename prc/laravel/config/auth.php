@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\Citizen;
 
 return [
 
@@ -39,8 +40,14 @@ return [
 
     'guards' => [
         'web' => [
-            'driver' => 'session',
+            'driver'   => 'session',
             'provider' => 'users',
+        ],
+
+        // Citizen guard — used by the Flutter mobile app via Sanctum tokens
+        'citizen' => [
+            'driver'   => 'sanctum',
+            'provider' => 'citizens',
         ],
     ],
 
@@ -64,13 +71,14 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model'  => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        // Citizens — mobile app users (phone + PIN auth)
+        'citizens' => [
+            'driver' => 'eloquent',
+            'model'  => Citizen::class,
+        ],
     ],
 
     /*
