@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+    (function() {
+        var role = localStorage.getItem('cw_role');
+        if (!role) {
+            window.location.replace('index.html');
+        } else if (role !== 'super_admin') {
+            window.location.replace(role === 'ceo' ? 'offices/ceo/dashboard.html' : 'offices/cenro/dashboard.html');
+        }
+    })();
+</script>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pending Reports — CIVILWATCH Admin</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="/css/variables.css" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/sidebar.css" />
+    <link rel="stylesheet" href="/css/navbar.css" />
+    <link rel="stylesheet" href="/css/cards.css" />
+    <link rel="stylesheet" href="/css/buttons.css" />
+    <link rel="stylesheet" href="/css/tables.css" />
+    <link rel="stylesheet" href="/css/badges.css" />
+    <link rel="stylesheet" href="/css/responsive.css" />
+    <style>
+        .pending-stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .pending-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: var(--status-pending-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pending-stat-icon .material-symbols-outlined {
+            font-size: 26px;
+            color: var(--status-pending);
+        }
+
+        .pending-stat-val {
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .pending-stat-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .pending-stat-sub {
+            font-size: 12px;
+            color: var(--gray-400);
+        }
+    </style>
+</head>
+
+<body data-page="pending-reports">
+    <div class="app-wrapper">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-area" id="mainArea">
+            <nav class="navbar" id="navbar"></nav>
+            <main class="page-content">
+
+                <!-- Header -->
+                <div class="page-header">
+                    <h1 class="page-title">Pending Reports</h1>
+                    <p class="page-subtitle">Review and validate newly submitted reports.</p>
+                </div>
+
+                <!-- Stat -->
+                <div class="pending-stat-card">
+                    <div class="pending-stat-icon">
+                        <span class="material-symbols-outlined">pending_actions</span>
+                    </div>
+                    <div>
+                        <div class="pending-stat-val">24</div>
+                        <div class="pending-stat-label">Pending Reports</div>
+                        <div class="pending-stat-sub">Reports awaiting validation</div>
+                    </div>
+                </div>
+
+                <!-- Toolbar -->
+                <div class="table-toolbar">
+                    <div class="search-input-wrap">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search by issue, location, or reporter..." />
+                    </div>
+                    <select class="filter-select" id="catFilter">
+                        <option value="">All Categories</option>
+                        <option value="Infrastructure">Infrastructure</option>
+                        <option value="Environmental">Environmental</option>
+                    </select>
+                    <select class="filter-select" id="brgyFilter">
+                        <option value="">All Barangays</option>
+                        <option>Aplaya</option>
+                        <option>Carmen</option>
+                        <option>Zone II</option>
+                        <option>Magsaysay</option>
+                        <option>Badiang</option>
+                        <option>Zone III</option>
+                    </select>
+                    <div class="date-filter">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        May 1, 2025 – May 21, 2026
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="card">
+                    <div class="table-container" style="border:none;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>PHOTO</th>
+                                    <th>ISSUE</th>
+                                    <th>CATEGORY</th>
+                                    <th>BARANGAY</th>
+                                    <th>SUBMITTED BY</th>
+                                    <th>SUBMITTED DATE</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <span class="table-showing" id="showingLabel">Showing 1 to 6 of 24 results</span>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="pagination" id="pagination"></div>
+                            <select class="per-page-select">
+                                <option>10 / page</option>
+                                <option>20 / page</option>
+                                <option>50 / page</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        const pendingReports = [{
+                id: 'CW-2026-241',
+                issue: 'Road Repair',
+                cat: 'Infrastructure',
+                barangay: 'Aplaya',
+                name: 'Juan Dela Cruz',
+                phone: '0912 345 6789',
+                date: 'May 21, 2026',
+                time: '10:30 AM',
+                desc: 'Deep potholes along the road causing difficulty for vehicles.'
+            },
+            {
+                id: 'CW-2026-240',
+                issue: 'Illegal Dumping',
+                cat: 'Environmental',
+                barangay: 'Carmen',
+                name: 'Maria Santos',
+                phone: '0998 765 4321',
+                date: 'May 21, 2026',
+                time: '09:15 AM',
+                desc: 'Garbage is illegally dumped near the river side.'
+            },
+            {
+                id: 'CW-2026-239',
+                issue: 'Road Graveling',
+                cat: 'Infrastructure',
+                barangay: 'Zone II',
+                name: 'Pedro Reyes',
+                phone: '0917 111 2222',
+                date: 'May 20, 2026',
+                time: '04:45 PM',
+                desc: 'Gravel road needs re-graveling, surface is heavily worn.'
+            },
+            {
+                id: 'CW-2026-238',
+                issue: 'Blocked Canal',
+                cat: 'Infrastructure',
+                barangay: 'Magsaysay',
+                name: 'Ana Lopez',
+                phone: '0933 222 1111',
+                date: 'May 20, 2026',
+                time: '02:20 PM',
+                desc: 'Canal is clogged causing water to overflow in the area.'
+            },
+            {
+                id: 'CW-2026-237',
+                issue: 'Garbage Collection',
+                cat: 'Environmental',
+                barangay: 'Badiang',
+                name: 'Ramon Garcia',
+                phone: '0906 888 7777',
+                date: 'May 20, 2026',
+                time: '11:05 AM',
+                desc: 'Missed garbage collection schedule for two consecutive weeks.'
+            },
+            {
+                id: 'CW-2026-236',
+                issue: 'Streetlight / Light Pole Concern',
+                cat: 'Infrastructure',
+                barangay: 'Zone III',
+                name: 'Carla Mendoza',
+                phone: '0915 333 4444',
+                date: 'May 19, 2026',
+                time: '08:30 PM',
+                desc: 'Streetlight is not working at night.'
+            },
+        ];
+
+        let filtered = [...pendingReports];
+
+        function render() {
+            const tbody = document.getElementById('pendingTableBody');
+            tbody.innerHTML = filtered.map(r => `
+    <tr>
+      <td><span class="ref-id">${r.id}</span></td>
+      <td>
+        <img class="table-photo" src="${getPhotoUrl(r.issue)}" alt="${r.issue}"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+             style="display:block"/>
+        <div class="table-photo-placeholder" style="display:none">
+          <span class="material-symbols-outlined">image</span>
+        </div>
+      </td>
+      <td>
+        <div class="table-issue">
+          <span class="table-issue-name">${r.issue}</span>
+          <span class="table-issue-desc">${r.desc}</span>
+        </div>
+      </td>
+      <td>${Utils.categoryBadge(r.cat)}</td>
+      <td>${r.barangay}</td>
+      <td>
+        <div class="submitter-cell">
+          <div class="submitter-avatar"><span class="material-symbols-outlined">person</span></div>
+          <div class="submitter-info">
+            <span class="submitter-name">${r.name}</span>
+            <span class="submitter-phone">${r.phone}</span>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div style="font-size:13px;color:var(--gray-700)">${r.date}</div>
+        <div style="font-size:11px;color:var(--gray-400)">${r.time}</div>
+      </td>
+      <td>
+        <a href="report-details.html?id=${encodeURIComponent(r.id)}" class="btn-view">
+          <span class="material-symbols-outlined">visibility</span> View
+        </a>
+      </td>
+    </tr>
+  `).join('');
+            document.getElementById('showingLabel').textContent = `Showing 1 to ${filtered.length} of 24 results`;
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const pg = document.getElementById('pagination');
+            pg.innerHTML = `
+    <button class="page-btn"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button class="page-btn active">1</button>
+    <button class="page-btn">2</button>
+    <button class="page-btn">3</button>
+    <button class="page-btn">4</button>
+    <button class="page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+  `;
+        }
+
+        // Search + filter
+        const doFilter = Utils.debounce(() => {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const cat = document.getElementById('catFilter').value;
+            const brgy = document.getElementById('brgyFilter').value;
+            filtered = pendingReports.filter(r =>
+                (!q || r.issue.toLowerCase().includes(q) || r.barangay.toLowerCase().includes(q) || r.name.toLowerCase().includes(q)) &&
+                (!cat || r.cat === cat) &&
+                (!brgy || r.barangay === brgy)
+            );
+            render();
+        }, 250);
+
+        document.getElementById('searchInput').addEventListener('input', doFilter);
+        document.getElementById('catFilter').addEventListener('change', doFilter);
+        document.getElementById('brgyFilter').addEventListener('change', doFilter);
+
+        render();
+    </script>
+</body>
+
+</html>

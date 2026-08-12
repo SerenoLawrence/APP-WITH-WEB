@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+  (function(){
+    var role = localStorage.getItem('cw_role');
+    if (!role) { window.location.replace('index.html'); }
+    else if (role !== 'super_admin') {
+      window.location.replace(role === 'ceo' ? 'offices/ceo/dashboard.html' : 'offices/cenro/dashboard.html');
+    }
+  })();
+</script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users — CIVILWATCH Admin</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="/css/variables.css" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/navbar.css" />
+  <link rel="stylesheet" href="/css/cards.css" />
+  <link rel="stylesheet" href="/css/buttons.css" />
+  <link rel="stylesheet" href="/css/tables.css" />
+  <link rel="stylesheet" href="/css/badges.css" />
+  <link rel="stylesheet" href="/css/forms.css" />
+  <link rel="stylesheet" href="/css/responsive.css" />
+  <style>
+    /* ── Stat cards ── */
+    .users-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .user-stat-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .user-stat-icon {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .user-stat-icon .material-symbols-outlined { font-size: 26px; }
+    .user-stat-icon.total    { background: var(--primary-light);        color: var(--primary); }
+    .user-stat-icon.active   { background: var(--status-resolved-bg);   color: var(--status-resolved); }
+    .user-stat-icon.admin    { background: var(--status-inprogress-bg); color: var(--status-inprogress); }
+    .user-stat-icon.staff    { background: #F3E8FF;                     color: #7C3AED; }
+    .user-stat-val   { font-size: 28px; font-weight: 700; color: var(--gray-900); line-height: 1; }
+    .user-stat-label { font-size: 13px; font-weight: 600; color: var(--gray-700); margin-top: 3px; }
+    .user-stat-sub   { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+    /* ── User avatar ── */
+    .user-avatar-cell {
+      width: 38px; height: 38px;
+      border-radius: var(--radius-full);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+    }
+    .user-cell { display: flex; align-items: center; gap: 12px; }
+    .user-cell-name  { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+    .user-cell-email { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+
+    /* ── Role badge ── */
+    .role-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: var(--radius-full);
+      font-size: 12px; font-weight: 600;
+    }
+    .role-badge.admin { background: var(--primary-light); color: var(--primary); }
+    .role-badge.staff { background: #F3E8FF; color: #7C3AED; }
+
+    /* ── Status dot ── */
+    .status-dot-wrap { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+    .status-dot-green { width: 8px; height: 8px; border-radius: 50%; background: var(--status-resolved); flex-shrink:0; }
+    .status-dot-red   { width: 8px; height: 8px; border-radius: 50%; background: #EF4444; flex-shrink:0; }
+
+    /* ── Table actions ── */
+    .user-actions { display: flex; align-items: center; gap: 6px; }
+    .btn-three-dot {
+      width: 30px; height: 30px; border-radius: var(--radius-full);
+      background: none; border: 1px solid var(--gray-200);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gray-500); cursor: pointer; transition: var(--transition);
+    }
+    .btn-three-dot:hover { background: var(--gray-100); color: var(--gray-800); }
+    .btn-three-dot .material-symbols-outlined { font-size: 18px; }
+
+    /* ── Slide-in Details Panel ── */
+    .details-panel {
+      position: fixed; top: 0; right: -400px;
+      width: 360px; height: 100vh;
+      background: var(--white);
+      border-left: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-lg);
+      z-index: 800;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+      display: flex; flex-direction: column;
+    }
+    .details-panel.open { right: 0; }
+    .details-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      position: sticky; top: 0;
+      background: var(--white);
+      z-index: 1;
+    }
+    .details-panel-title { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+    .panel-close {
+      width: 32px; height: 32px; border-radius: var(--radius-full);
+      background: none; border: none;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gray-500); cursor: pointer; transition: var(--transition);
+    }
+    .panel-close:hover { background: var(--gray-100); color: var(--gray-800); }
+
+    /* ── Panel profile hero ── */
+    .panel-profile {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 20px 20px; gap: 10px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .panel-avatar {
+      width: 72px; height: 72px;
+      border-radius: var(--radius-full);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 700; color: #fff;
+      position: relative;
+    }
+    .panel-avatar-dot {
+      position: absolute; bottom: 3px; right: 3px;
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid var(--white);
+    }
+    .panel-name  { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+    .panel-office { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+
+    /* ── Panel sections ── */
+    .panel-section { padding: 18px 20px; border-bottom: 1px solid var(--gray-100); }
+    .panel-section:last-of-type { border-bottom: none; }
+    .panel-section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--gray-400); margin-bottom: 12px;
+    }
+    .panel-info-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--gray-700);
+      margin-bottom: 9px;
+    }
+    .panel-info-row:last-child { margin-bottom: 0; }
+    .panel-info-row .material-symbols-outlined { font-size: 17px; color: var(--gray-400); flex-shrink: 0; }
+
+    /* Status chip */
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: var(--radius-full);
+      font-size: 12px; font-weight: 600;
+    }
+    .status-chip.active   { background: var(--status-resolved-bg); color: var(--status-resolved); }
+    .status-chip.inactive { background: #FEE2E2; color: #EF4444; }
+    .status-chip-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    /* Permissions link */
+    .perms-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: var(--primary); font-size: 12px; font-weight: 600;
+      text-decoration: none; margin-top: 6px; cursor: pointer;
+    }
+    .perms-link:hover { text-decoration: underline; }
+    .perms-link .material-symbols-outlined { font-size: 15px; }
+
+    /* Last activity */
+    .activity-log-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 12px; color: var(--gray-600);
+    }
+    .activity-log-row .material-symbols-outlined { font-size: 15px; color: var(--gray-400); margin-top: 1px; flex-shrink: 0; }
+
+    /* Panel action buttons */
+    .panel-actions {
+      padding: 16px 20px 24px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .btn-deactivate {
+      width: 100%; padding: 10px;
+      border: 1.5px solid #EF4444; border-radius: var(--radius-md);
+      background: none; color: #EF4444;
+      font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      cursor: pointer; transition: var(--transition);
+    }
+    .btn-deactivate:hover { background: #FEE2E2; }
+    .btn-deactivate .material-symbols-outlined { font-size: 17px; }
+    .panel-action-row { display: flex; gap: 10px; }
+    .panel-action-row .btn { flex: 1; justify-content: center; }
+
+    /* ── Add User Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000; opacity: 0;
+      pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .modal-backdrop.active { opacity: 1; pointer-events: all; }
+    .modal-dialog {
+      position: fixed; inset: 0; z-index: 1001;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; pointer-events: none; opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .modal-dialog.active { opacity: 1; pointer-events: all; }
+    .modal-dialog .modal-box { width: 100%; max-width: 500px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* Dark mode extras */
+    [data-theme="dark"] .user-stat-card { background: #1E2330; border-color: var(--gray-200); }
+    [data-theme="dark"] .user-stat-icon.staff { background: rgba(124,58,237,0.15); }
+    [data-theme="dark"] .role-badge.staff { background: rgba(124,58,237,0.15); color: #C084FC; }
+    [data-theme="dark"] .details-panel { background: #1E2330; border-left-color: var(--gray-200); }
+    [data-theme="dark"] .details-panel-header { background: #1E2330; border-bottom-color: var(--gray-200); }
+    [data-theme="dark"] .panel-profile { border-bottom-color: var(--gray-200); }
+    [data-theme="dark"] .panel-section { border-bottom-color: var(--gray-200); }
+    [data-theme="dark"] .panel-name { color: var(--gray-900); }
+    [data-theme="dark"] .panel-section-title { color: var(--gray-500); }
+    [data-theme="dark"] .panel-info-row { color: var(--gray-700); }
+    [data-theme="dark"] .btn-three-dot { border-color: var(--gray-200); }
+    [data-theme="dark"] .btn-three-dot:hover { background: var(--gray-100); }
+  </style>
+</head>
+<body data-page="users">
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-area" id="mainArea">
+    <nav class="navbar" id="navbar"></nav>
+    <main class="page-content">
+
+      <!-- Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Users</h1>
+          <p class="page-subtitle">Manage system users and their access roles.</p>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="users-stats">
+        <div class="user-stat-card">
+          <div class="user-stat-icon total">
+            <span class="material-symbols-outlined">group</span>
+          </div>
+          <div>
+            <div class="user-stat-val">16</div>
+            <div class="user-stat-label">Total Users</div>
+            <div class="user-stat-sub">All administrators</div>
+          </div>
+        </div>
+        <div class="user-stat-card">
+          <div class="user-stat-icon active">
+            <span class="material-symbols-outlined">verified_user</span>
+          </div>
+          <div>
+            <div class="user-stat-val">14</div>
+            <div class="user-stat-label">Active Users</div>
+            <div class="user-stat-sub">Currently active</div>
+          </div>
+        </div>
+        <div class="user-stat-card">
+          <div class="user-stat-icon admin">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+          </div>
+          <div>
+            <div class="user-stat-val">11</div>
+            <div class="user-stat-label">Administrators</div>
+            <div class="user-stat-sub">With full access</div>
+          </div>
+        </div>
+        <div class="user-stat-card">
+          <div class="user-stat-icon staff">
+            <span class="material-symbols-outlined">person</span>
+          </div>
+          <div>
+            <div class="user-stat-val">5</div>
+            <div class="user-stat-label">Staff</div>
+            <div class="user-stat-sub">Limited access</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="table-toolbar">
+        <div class="search-input-wrap">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search users..." />
+        </div>
+        <select class="filter-select" id="roleFilter">
+          <option value="">All Roles</option>
+          <option value="Administrator">Administrator</option>
+          <option value="Staff">Staff</option>
+        </select>
+        <select class="filter-select" id="officeFilter">
+          <option value="">All Offices</option>
+          <option value="City Engineering Office">City Engineering Office</option>
+          <option value="CENRO">CENRO</option>
+          <option value="TAPIK Digos">TAPIK Digos</option>
+        </select>
+        <select class="filter-select" id="statusFilter">
+          <option value="">All Status</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+        <button class="btn btn-primary" onclick="openAddUserModal()">
+          <span class="material-symbols-outlined">person_add</span>
+          Add User
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="table-container" style="border:none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>USER</th>
+                <th>OFFICE</th>
+                <th>ROLE</th>
+                <th>STATUS</th>
+                <th>LAST LOGIN</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span class="table-showing" id="showingLabel">Showing 1 to 8 of 16 users</span>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="pagination" id="pagination"></div>
+            <select class="per-page-select">
+              <option>10 / page</option>
+              <option>20 / page</option>
+              <option>50 / page</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- User Details Slide Panel -->
+<div class="details-panel" id="detailsPanel">
+  <div class="details-panel-header">
+    <span class="details-panel-title">User Details</span>
+    <button class="panel-close" onclick="closePanel()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div id="panelContent"></div>
+</div>
+<div class="overlay" id="panelOverlay" onclick="closePanel()"></div>
+
+<!-- Add User Modal -->
+<div class="modal-backdrop" id="addUserBackdrop" onclick="closeAddUserModal()"></div>
+<div class="modal-dialog" id="addUserModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Add New User</span>
+      <button class="modal-close" onclick="closeAddUserModal()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" class="form-input" placeholder="e.g. Juan" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" class="form-input" placeholder="e.g. Dela Cruz" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="user@digos.gov.ph" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="text" class="form-input" placeholder="09XX XXX XXXX" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-select">
+            <option>Administrator</option>
+            <option>Staff</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assigned Office</label>
+          <select class="form-select">
+            <option>City Engineering Office</option>
+            <option>CENRO</option>
+            <option>TAPIK Digos</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-secondary" onclick="closeAddUserModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddUser()">
+        <span class="material-symbols-outlined">person_add</span>
+        Add User
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/app.js"></script>
+<script>
+// ── Sample data ──────────────────────────────────────────────
+const AVATAR_COLORS = ['#1A56DB','#10B981','#F97316','#7C3AED','#EF4444','#0891B2','#D97706','#059669','#6366F1'];
+function colorFor(i) { return AVATAR_COLORS[i % AVATAR_COLORS.length]; }
+function initials(name) {
+  return name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+}
+
+const usersData = [
+  { id:'AD-2026-001', name:'Juan Dela Cruz',    email:'juan.delacruz@digos.gov.ph',    phone:'0966 123 4567', office:'City Engineering Office', role:'Administrator', status:'Active',   lastLogin:'May 21, 2026\n10:30 AM', activity:'Logged in via Chrome on Windows' },
+  { id:'AD-2026-002', name:'Maria Santos',      email:'maria.santos@cenro.gov.ph',     phone:'0998 765 4321', office:'CENRO',                   role:'Administrator', status:'Active',   lastLogin:'May 21, 2026\n09:15 AM', activity:'Validated Report #CW-2026-218' },
+  { id:'AD-2026-003', name:'Ana Reyes',         email:'ana.reyes@tapikdigos.gov.ph',   phone:'0917 333 2244', office:'TAPIK Digos',             role:'Staff',         status:'Active',   lastLogin:'May 20, 2026\n04:45 PM', activity:'Updated status on Report #CW-2026-214' },
+  { id:'AD-2026-004', name:'Leo Pascual',       email:'leo.pascual@digos.gov.ph',      phone:'0912 555 6677', office:'City Engineering Office', role:'Staff',         status:'Active',   lastLogin:'May 20, 2026\n11:20 AM', activity:'Logged in via Firefox on Windows' },
+  { id:'AD-2026-005', name:'Carmen Rodriguez',  email:'carmen.rodriguez@cenro.gov.ph', phone:'0933 444 3311', office:'CENRO',                   role:'Staff',         status:'Active',   lastLogin:'May 19, 2026\n02:10 PM', activity:'Assigned Report #CW-2026-211 to CENRO' },
+  { id:'AD-2026-006', name:'Tom Ramirez',       email:'tom.ramirez@digos.gov.ph',      phone:'0906 222 8899', office:'City Engineering Office', role:'Administrator', status:'Inactive', lastLogin:'May 18, 2026\n—',         activity:'Logged out of the system' },
+  { id:'AD-2026-007', name:'Diana Suarez',      email:'diana.suarez@tapikdigos.gov.ph',phone:'0915 111 0022', office:'TAPIK Digos',             role:'Staff',         status:'Active',   lastLogin:'May 18, 2026\n09:05 AM', activity:'Viewed Analytics dashboard' },
+  { id:'AD-2026-008', name:'John Bermudez',     email:'john.bermudez@cenro.gov.ph',    phone:'0977 888 7766', office:'CENRO',                   role:'Administrator', status:'Active',   lastLogin:'May 17, 2026\n03:25 PM', activity:'Resolved Report #CW-2026-207' },
+];
+
+let filtered = [...usersData];
+let activeUser = null;
+
+// ── Render table ─────────────────────────────────────────────
+function render() {
+  const tbody = document.getElementById('usersTableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400);">No users found</td></tr>`;
+    document.getElementById('showingLabel').textContent = 'Showing 0 results';
+    renderPagination();
+    return;
+  }
+  tbody.innerHTML = filtered.map((u, i) => {
+    const col = colorFor(i);
+    const lines = u.lastLogin.split('\n');
+    return `
+      <tr style="cursor:pointer" onclick="openPanel(${i})">
+        <td>
+          <div class="user-cell">
+            <div class="user-avatar-cell" style="background:${col}">${initials(u.name)}</div>
+            <div>
+              <div class="user-cell-name">${u.name}</div>
+              <div class="user-cell-email">${u.email}</div>
+            </div>
+          </div>
+        </td>
+        <td style="font-size:13px;color:var(--gray-700)">${u.office}</td>
+        <td><span class="role-badge ${u.role === 'Administrator' ? 'admin' : 'staff'}">${u.role}</span></td>
+        <td>
+          <div class="status-dot-wrap">
+            <div class="${u.status === 'Active' ? 'status-dot-green' : 'status-dot-red'}"></div>
+            <span style="font-size:13px;color:var(--gray-700)">${u.status}</span>
+          </div>
+        </td>
+        <td>
+          <div style="font-size:13px;color:var(--gray-700)">${lines[0]}</div>
+          ${lines[1] ? `<div style="font-size:11px;color:var(--gray-400)">${lines[1]}</div>` : ''}
+        </td>
+        <td>
+          <div class="user-actions">
+            <button class="btn-view" onclick="event.stopPropagation();openPanel(${i})">
+              <span class="material-symbols-outlined">visibility</span> View
+            </button>
+            <button class="btn-three-dot" onclick="event.stopPropagation();Utils.showToast('More actions for '+usersData[${i}].name,'info')">
+              <span class="material-symbols-outlined">more_vert</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  document.getElementById('showingLabel').textContent = `Showing 1 to ${filtered.length} of 16 users`;
+  renderPagination();
+}
+
+function renderPagination() {
+  document.getElementById('pagination').innerHTML = `
+    <button class="page-btn"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button class="page-btn active">1</button>
+    <button class="page-btn">2</button>
+    <button class="page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+  `;
+}
+
+// ── Details panel ────────────────────────────────────────────
+function openPanel(idx) {
+  const realIdx = usersData.indexOf(filtered[idx]);
+  activeUser = realIdx >= 0 ? realIdx : idx;
+  renderPanel(activeUser);
+  document.getElementById('detailsPanel').classList.add('open');
+  document.getElementById('panelOverlay').classList.add('active');
+}
+
+function closePanel() {
+  document.getElementById('detailsPanel').classList.remove('open');
+  document.getElementById('panelOverlay').classList.remove('active');
+}
+
+function renderPanel(idx) {
+  const u = usersData[idx];
+  const col = colorFor(idx);
+  const isActive = u.status === 'Active';
+  document.getElementById('panelContent').innerHTML = `
+    <div class="panel-profile">
+      <div class="panel-avatar" style="background:${col}">
+        ${initials(u.name)}
+        <div class="panel-avatar-dot" style="background:${isActive ? 'var(--status-resolved)' : '#EF4444'}"></div>
+      </div>
+      <div class="panel-name">${u.name}</div>
+      <span class="role-badge ${u.role === 'Administrator' ? 'admin' : 'staff'}">${u.role}</span>
+      <div class="panel-office">${u.office}</div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Account Information</div>
+      <div class="panel-info-row">
+        <span class="material-symbols-outlined">mail</span>
+        <span>${u.email}</span>
+      </div>
+      <div class="panel-info-row">
+        <span class="material-symbols-outlined">call</span>
+        <span>${u.phone}</span>
+      </div>
+      <div class="panel-info-row">
+        <span class="material-symbols-outlined">badge</span>
+        <span>User ID: ${u.id}</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Account Status</div>
+      <span class="status-chip ${isActive ? 'active' : 'inactive'}">
+        <div class="status-chip-dot" style="background:${isActive ? 'var(--status-resolved)' : '#EF4444'}"></div>
+        ${u.status}
+      </span>
+      <div style="font-size:12px;color:var(--gray-500);margin-top:8px;">
+        ${isActive ? 'This account is active and has full access.' : 'This account is inactive and cannot log in.'}
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Role &amp; Permissions</div>
+      <div style="font-size:13px;font-weight:600;color:var(--gray-800)">${u.role}</div>
+      <div style="font-size:12px;color:var(--gray-500);margin-top:4px;">
+        ${u.role === 'Administrator' ? 'Full access to all system features and settings.' : 'Limited access to assigned office reports only.'}
+      </div>
+      <span class="perms-link">View Permissions <span class="material-symbols-outlined">chevron_right</span></span>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Last Activity</div>
+      <div class="activity-log-row">
+        <span class="material-symbols-outlined">schedule</span>
+        <div>
+          <div style="font-size:12px;color:var(--gray-700);font-weight:500">${u.lastLogin.replace('\n', ' ')}</div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">${u.activity}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-actions">
+      <div class="panel-action-row">
+        <button class="btn btn-secondary" style="font-size:13px;" onclick="Utils.showToast('Edit user feature coming soon','info')">
+          <span class="material-symbols-outlined">edit</span> Edit User
+        </button>
+        <button class="btn btn-secondary" style="font-size:13px;" onclick="Utils.showToast('Password reset link sent','success')">
+          <span class="material-symbols-outlined">lock_reset</span> Reset Password
+        </button>
+      </div>
+      <button class="btn-deactivate" onclick="Utils.showToast('${isActive ? 'User deactivated' : 'User activated'}','${isActive ? 'error' : 'success'}')">
+        <span class="material-symbols-outlined">${isActive ? 'person_off' : 'person'}</span>
+        ${isActive ? 'Deactivate User' : 'Activate User'}
+      </button>
+    </div>
+  `;
+}
+
+// ── Filters ──────────────────────────────────────────────────
+const doFilter = Utils.debounce(() => {
+  const q    = document.getElementById('searchInput').value.toLowerCase();
+  const role = document.getElementById('roleFilter').value;
+  const off  = document.getElementById('officeFilter').value;
+  const st   = document.getElementById('statusFilter').value;
+  filtered = usersData.filter(u =>
+    (!q    || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.office.toLowerCase().includes(q)) &&
+    (!role || u.role === role) &&
+    (!off  || u.office === off) &&
+    (!st   || u.status === st)
+  );
+  render();
+}, 250);
+
+document.getElementById('searchInput').addEventListener('input', doFilter);
+document.getElementById('roleFilter').addEventListener('change', doFilter);
+document.getElementById('officeFilter').addEventListener('change', doFilter);
+document.getElementById('statusFilter').addEventListener('change', doFilter);
+
+// ── Add User Modal ───────────────────────────────────────────
+function openAddUserModal() {
+  document.getElementById('addUserBackdrop').classList.add('active');
+  document.getElementById('addUserModal').classList.add('active');
+}
+function closeAddUserModal() {
+  document.getElementById('addUserBackdrop').classList.remove('active');
+  document.getElementById('addUserModal').classList.remove('active');
+}
+function confirmAddUser() {
+  closeAddUserModal();
+  Utils.showToast('New user added successfully', 'success');
+}
+
+render();
+</script>
+</body>
+</html>

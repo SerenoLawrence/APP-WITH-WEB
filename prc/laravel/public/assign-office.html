@@ -1,0 +1,2286 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+    (function() {
+        var token = localStorage.getItem('cw_token');
+        var role = localStorage.getItem('cw_role');
+        if (!token || !role) {
+            window.location.replace('index.html');
+            return;
+        }
+        if (role !== 'super_admin') {
+            window.location.replace(role === 'ceo' ? 'offices/ceo/dashboard.html' : 'offices/cenro/dashboard.html');
+        }
+    })();
+</script>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assign Office — CIVILWATCH Admin</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="/css/variables.css" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/sidebar.css" />
+    <link rel="stylesheet" href="/css/navbar.css" />
+    <link rel="stylesheet" href="/css/cards.css" />
+    <link rel="stylesheet" href="/css/buttons.css" />
+    <link rel="stylesheet" href="/css/tables.css" />
+    <link rel="stylesheet" href="/css/badges.css" />
+    <link rel="stylesheet" href="/css/forms.css" />
+    <link rel="stylesheet" href="/css/responsive.css" />
+    <style>
+        .ao-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .ao-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .ao-stat {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .ao-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .ao-stat-icon .material-symbols-outlined {
+            font-size: 24px;
+        }
+
+        .ao-stat-icon.waiting {
+            background: #FFF7ED;
+            color: #F97316;
+        }
+
+        .ao-stat-icon.infra {
+            background: #EEF3FF;
+            color: #1A56DB;
+        }
+
+        .ao-stat-icon.env {
+            background: #ECFDF5;
+            color: #10B981;
+        }
+
+        .ao-stat-num {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1;
+        }
+
+        .ao-stat-label {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 3px;
+        }
+
+        .ao-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .ao-search {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .ao-search input {
+            width: 100%;
+            height: 40px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 0 14px 0 38px;
+            font-size: 14px;
+            color: var(--gray-700);
+            background: var(--white);
+            font-family: var(--font-family);
+            box-sizing: border-box;
+        }
+
+        .ao-search input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 86, 219, .08);
+        }
+
+        .srch-icon {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: var(--gray-400);
+            pointer-events: none;
+        }
+
+        .ao-select {
+            height: 40px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 0 12px;
+            font-size: 14px;
+            color: var(--gray-700);
+            background: var(--white);
+            font-family: var(--font-family);
+            cursor: pointer;
+            min-width: 140px;
+        }
+
+        .ao-select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .ao-table-head {
+            display: grid;
+            grid-template-columns: 64px 1fr 130px 130px 160px 200px;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 16px;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .ao-th {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--gray-400);
+        }
+
+        .ao-report-row {
+            display: grid;
+            grid-template-columns: 64px 1fr 130px 130px 160px 200px;
+            gap: 12px;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--gray-100);
+            background: var(--white);
+            transition: var(--transition);
+        }
+
+        .ao-report-row:hover {
+            background: var(--gray-50);
+        }
+
+        .ao-report-row:last-child {
+            border-bottom: none;
+        }
+
+        .ao-thumb {
+            width: 64px;
+            height: 52px;
+            border-radius: var(--radius-sm);
+            object-fit: cover;
+            background: var(--gray-100);
+        }
+
+        .ao-ref {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary);
+            font-family: monospace;
+        }
+
+        .ao-rtitle {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 2px 0;
+        }
+
+        .ao-loc {
+            font-size: 12px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .ao-loc .material-symbols-outlined {
+            font-size: 13px;
+        }
+
+        .ao-date {
+            font-size: 12px;
+            color: var(--gray-500);
+            line-height: 1.4;
+        }
+
+        .ao-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-view {
+            height: 32px;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1.5px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            background: var(--white);
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-view:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-assign-sm {
+            height: 32px;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            background: var(--primary);
+            color: var(--white);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-assign-sm:hover {
+            background: var(--primary-dark);
+        }
+
+        .sdot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        .sdot.approved {
+            background: #1A56DB;
+        }
+
+        .sdot.assigned {
+            background: #F59E0B;
+        }
+
+        .sdot.progress {
+            background: #8B5CF6;
+        }
+
+        .sdot.resolved {
+            background: #10B981;
+        }
+
+        .status-dot-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .ao-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-top: 1px solid var(--gray-100);
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        .ao-page-btns {
+            display: flex;
+            gap: 4px;
+        }
+
+        .pg-btn {
+            width: 32px;
+            height: 32px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-600);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .pg-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .pg-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--white);
+        }
+
+        .pg-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .pg-btn .material-symbols-outlined {
+            font-size: 16px;
+        }
+
+        .ao-right {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .ao-guide-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .ao-guide-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 12px;
+        }
+
+        .ao-guide-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+        }
+
+        .ao-guide-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .ao-guide-item.infra {
+            background: #EEF3FF;
+        }
+
+        .ao-guide-item.env {
+            background: #ECFDF5;
+        }
+
+        .ao-guide-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .ao-guide-icon.infra {
+            background: #DBEAFE;
+        }
+
+        .ao-guide-icon.env {
+            background: #D1FAE5;
+        }
+
+        .ao-guide-icon .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+        .ao-guide-icon.infra .material-symbols-outlined {
+            color: #1A56DB;
+        }
+
+        .ao-guide-icon.env .material-symbols-outlined {
+            color: #10B981;
+        }
+
+        .ao-guide-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .ao-guide-sub {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        .ao-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+        }
+
+        .ao-legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .ao-tip-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--gray-600);
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .ao-tip-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .ao-tip-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .ao-tip-icon .material-symbols-outlined {
+            font-size: 12px;
+            color: var(--primary);
+        }
+
+        .ao-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .45);
+            z-index: 1000;
+            display: none;
+        }
+
+        .ao-overlay.open {
+            display: block;
+        }
+
+        .ao-modal {
+            position: fixed;
+            z-index: 1001;
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+        }
+
+        .ao-modal.open {
+            display: flex;
+        }
+
+        .view-modal {
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(780px, 96vw);
+            max-height: 90vh;
+        }
+
+        .assign-modal {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(880px, 96vw);
+            max-height: 92vh;
+        }
+
+        .success-modal {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(420px, 94vw);
+            text-align: center;
+            padding: 40px 32px;
+        }
+
+        .success-modal.open {
+            display: block;
+        }
+
+        .ao-mheader {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-200);
+            flex-shrink: 0;
+        }
+
+        .ao-mtitle {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ao-mstep {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 2px 10px;
+            border-radius: var(--radius-full);
+        }
+
+        .ao-mclose {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--gray-100);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ao-mclose .material-symbols-outlined {
+            font-size: 18px;
+            color: var(--gray-600);
+        }
+
+        .ao-mbody {
+            overflow-y: auto;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .ao-mfooter {
+            padding: 14px 20px;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+
+        .vm-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+        }
+
+        .vm-photo {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+            background: var(--gray-100);
+        }
+
+        .vm-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .vm-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 6px;
+        }
+
+        .vm-loc {
+            font-size: 13px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+
+        .vm-dlabel {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--gray-400);
+            margin-bottom: 4px;
+        }
+
+        .vm-desc {
+            font-size: 13px;
+            color: var(--gray-700);
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        .vm-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 16px;
+        }
+
+        .vm-meta-item strong {
+            display: block;
+            font-size: 13px;
+            color: var(--gray-800);
+            font-weight: 600;
+        }
+
+        .vm-meta-item {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .vm-tl {
+            margin-top: 14px;
+            border-top: 1px solid var(--gray-100);
+            padding-top: 14px;
+        }
+
+        .vm-tl-h {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 10px;
+        }
+
+        .vm-tl-row {
+            display: flex;
+            gap: 10px;
+            padding: 5px 0;
+        }
+
+        .vm-tl-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary);
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+
+        .vm-tl-dot.done {
+            background: var(--status-resolved);
+        }
+
+        .vm-tl-note {
+            font-size: 12px;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+
+        .vm-tl-time {
+            font-size: 11px;
+            color: var(--gray-400);
+        }
+
+        .am-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .am-summ {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .am-ref {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary);
+            font-family: monospace;
+        }
+
+        .am-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 4px 0;
+        }
+
+        .am-loc {
+            font-size: 12px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .am-rec {
+            border: 1.5px solid #BFDBFE;
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .am-rec-icon {
+            width: 36px;
+            height: 36px;
+            background: #DBEAFE;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .am-rec-icon .material-symbols-outlined {
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        .am-rec-tag {
+            font-size: 11px;
+            color: var(--primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .am-rec-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .am-rec-sub {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .am-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .am-select {
+            width: 100%;
+            height: 42px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 0 12px;
+            font-size: 14px;
+            color: var(--gray-700);
+            background: var(--white);
+            font-family: var(--font-family);
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .am-select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .am-ta {
+            width: 100%;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            font-size: 13px;
+            font-family: var(--font-family);
+            color: var(--gray-700);
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .am-ta:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .pri-pills {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .pp {
+            flex: 1;
+            height: 38px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--white);
+            user-select: none;
+        }
+
+        .pdot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .pp[data-p="low"] .pdot {
+            background: #10B981;
+        }
+
+        .pp[data-p="medium"] .pdot {
+            background: #F59E0B;
+        }
+
+        .pp[data-p="high"] .pdot {
+            background: #EF4444;
+        }
+
+        .pp[data-p="critical"] .pdot {
+            background: #7C3AED;
+        }
+
+        .pp.sel[data-p="low"] {
+            border-color: #10B981;
+            background: #ECFDF5;
+            color: #065F46;
+        }
+
+        .pp.sel[data-p="medium"] {
+            border-color: #F59E0B;
+            background: #FFFBEB;
+            color: #B45309;
+        }
+
+        .pp.sel[data-p="high"] {
+            border-color: #EF4444;
+            background: #FEF2F2;
+            color: #B91C1C;
+        }
+
+        .pp.sel[data-p="critical"] {
+            border-color: #7C3AED;
+            background: #F5F3FF;
+            color: #5B21B6;
+        }
+
+        .ao-empty {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--gray-400);
+            font-size: 14px;
+        }
+
+        .ao-empty .material-symbols-outlined {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg)
+            }
+
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* ── Assign Form View ─────────────────────── */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--primary);
+            cursor: pointer;
+            margin-bottom: 18px;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: var(--primary-dark);
+        }
+
+        .back-link .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+        .af-summary-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 20px 24px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .af-summary-photo {
+            width: 120px;
+            height: 100px;
+            border-radius: var(--radius-md);
+            object-fit: cover;
+            background: var(--gray-100);
+            flex-shrink: 0;
+        }
+
+        .af-summary-fields {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px 28px;
+        }
+
+        .af-field-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--gray-400);
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .af-field-label .material-symbols-outlined {
+            font-size: 14px;
+        }
+
+        .af-field-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .af-field-value.primary-text {
+            color: var(--primary);
+            font-family: monospace;
+        }
+
+        .af-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .af-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 12px;
+        }
+
+        .af-divider {
+            height: 1px;
+            background: var(--gray-200);
+            margin: 20px 0;
+        }
+
+        .af-office-card {
+            border: 2px solid var(--gray-200);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 12px;
+        }
+
+        .af-office-card:hover,
+        .af-office-card.sel {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .af-office-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--primary-light);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .af-office-icon .material-symbols-outlined {
+            font-size: 22px;
+            color: var(--primary);
+        }
+
+        .af-office-icon.env {
+            background: #ECFDF5;
+        }
+
+        .af-office-icon.env .material-symbols-outlined {
+            color: #10B981;
+        }
+
+        .af-office-info {
+            flex: 1;
+        }
+
+        .af-office-name-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .af-office-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .af-rec-badge {
+            background: var(--primary);
+            color: var(--white);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+
+        .af-office-desc {
+            font-size: 13px;
+            color: var(--gray-500);
+            line-height: 1.5;
+        }
+
+        .af-office-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .af-office-card.sel .af-office-check {
+            opacity: 1;
+        }
+
+        .af-office-check .material-symbols-outlined {
+            font-size: 14px;
+            color: white;
+        }
+
+        .af-other-select {
+            width: 100%;
+            height: 44px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 0 14px;
+            font-size: 14px;
+            color: var(--gray-700);
+            background: var(--white);
+            font-family: var(--font-family);
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .af-other-select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .af-pri-pills {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .af-pp {
+            flex: 1;
+            height: 44px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--white);
+            user-select: none;
+        }
+
+        .af-pdot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .af-pp[data-p="low"] .af-pdot {
+            background: #10B981;
+        }
+
+        .af-pp[data-p="medium"] .af-pdot {
+            background: #F59E0B;
+        }
+
+        .af-pp[data-p="high"] .af-pdot {
+            background: #EF4444;
+        }
+
+        .af-pp.sel[data-p="low"] {
+            border-color: #10B981;
+            background: #ECFDF5;
+            color: #065F46;
+        }
+
+        .af-pp.sel[data-p="medium"] {
+            border-color: #F59E0B;
+            background: #FFFBEB;
+            color: #B45309;
+        }
+
+        .af-pp.sel[data-p="high"] {
+            border-color: #EF4444;
+            background: #FEF2F2;
+            color: #B91C1C;
+        }
+
+        .af-textarea {
+            width: 100%;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: var(--font-family);
+            color: var(--gray-700);
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .af-textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .af-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding-top: 20px;
+            border-top: 1px solid var(--gray-200);
+            margin-top: 20px;
+        }
+
+        .af-info-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .af-info-card.tip {
+            background: #F0F7FF;
+            border-color: #BFDBFE;
+        }
+
+        .af-info-card.warn {
+            background: #FFFBEB;
+            border-color: #FDE68A;
+        }
+
+        .af-info-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .af-info-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .af-info-icon.tip {
+            background: #DBEAFE;
+        }
+
+        .af-info-icon.why {
+            background: #EEF3FF;
+        }
+
+        .af-info-icon.warn {
+            background: #FEF3C7;
+        }
+
+        .af-info-icon .material-symbols-outlined {
+            font-size: 20px;
+        }
+
+        .af-info-icon.tip .material-symbols-outlined {
+            color: #1A56DB;
+        }
+
+        .af-info-icon.why .material-symbols-outlined {
+            color: #1A56DB;
+        }
+
+        .af-info-icon.warn .material-symbols-outlined {
+            color: #D97706;
+        }
+
+        .af-info-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .af-info-body {
+            font-size: 13px;
+            color: var(--gray-600);
+            line-height: 1.6;
+        }
+
+        .af-info-sub {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin: 10px 0 6px;
+        }
+
+        .af-info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .af-info-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--gray-700);
+        }
+
+        .af-info-item .material-symbols-outlined {
+            font-size: 16px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body data-page="assign-office">
+    <div class="app-wrapper">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-area" id="mainArea">
+            <nav class="navbar" id="navbar"></nav>
+            <main class="page-content">
+
+                <div class="page-header" style="margin-bottom:20px;">
+                    <h1 class="page-title" style="display:flex;align-items:center;gap:10px;">
+                        <span class="material-symbols-outlined" style="font-size:26px;color:var(--primary);">business_center</span>
+                        Assign Office
+                    </h1>
+                    <p class="page-subtitle">Review pending reports and assign them to the appropriate office.</p>
+                </div>
+
+                <!-- Stat cards -->
+                <div class="ao-stats">
+                    <div class="ao-stat">
+                        <div class="ao-stat-icon waiting">
+                            <span class="material-symbols-outlined">pending_actions</span>
+                        </div>
+                        <div>
+                            <div class="ao-stat-num" id="statTotal">—</div>
+                            <div class="ao-stat-label">Waiting for Assignment</div>
+                        </div>
+                    </div>
+                    <div class="ao-stat">
+                        <div class="ao-stat-icon infra">
+                            <span class="material-symbols-outlined">construction</span>
+                        </div>
+                        <div>
+                            <div class="ao-stat-num" id="statInfra">—</div>
+                            <div class="ao-stat-label">Infrastructure</div>
+                        </div>
+                    </div>
+                    <div class="ao-stat">
+                        <div class="ao-stat-icon env">
+                            <span class="material-symbols-outlined">eco</span>
+                        </div>
+                        <div>
+                            <div class="ao-stat-num" id="statEnv">—</div>
+                            <div class="ao-stat-label">Environmental</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main 2-col layout -->
+                <div class="ao-layout">
+
+                    <!-- LEFT: table -->
+                    <div>
+                        <div class="ao-toolbar">
+                            <div class="ao-search">
+                                <span class="material-symbols-outlined srch-icon">search</span>
+                                <input type="text" id="searchInput" placeholder="Search reports..." oninput="onSearch()" />
+                            </div>
+                            <select class="ao-select" id="filterCat" onchange="applyFilters()">
+                                <option value="">All Category</option>
+                                <option value="infrastructure">Infrastructure</option>
+                                <option value="environmental">Environmental</option>
+                            </select>
+                            <select class="ao-select" id="filterBarangay" onchange="applyFilters()">
+                                <option value="">All Barangay</option>
+                            </select>
+                            <select class="ao-select" id="filterSort" onchange="applyFilters()">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="high">High Priority First</option>
+                            </select>
+                        </div>
+
+                        <div class="card" style="overflow:hidden;">
+                            <div class="ao-table-head">
+                                <div></div>
+                                <div class="ao-th">Report</div>
+                                <div class="ao-th">Category</div>
+                                <div class="ao-th">Status</div>
+                                <div class="ao-th">Submitted At</div>
+                                <div class="ao-th">Action</div>
+                            </div>
+                            <div id="reportList">
+                                <div class="ao-empty">
+                                    <span class="material-symbols-outlined">pending_actions</span>
+                                    Loading reports...
+                                </div>
+                            </div>
+                            <div class="ao-pagination">
+                                <span id="pgInfo">Showing 0 reports</span>
+                                <div class="ao-page-btns" id="pgBtns"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: sidebar -->
+                    <div class="ao-right">
+                        <div class="ao-guide-card">
+                            <div class="ao-guide-title">Recommended Office Guide</div>
+                            <div class="ao-guide-item infra">
+                                <div class="ao-guide-icon infra">
+                                    <span class="material-symbols-outlined">construction</span>
+                                </div>
+                                <div>
+                                    <div class="ao-guide-name">Infrastructure</div>
+                                    <div class="ao-guide-sub">City Engineering Office</div>
+                                </div>
+                            </div>
+                            <div class="ao-guide-item env">
+                                <div class="ao-guide-icon env">
+                                    <span class="material-symbols-outlined">eco</span>
+                                </div>
+                                <div>
+                                    <div class="ao-guide-name">Environmental</div>
+                                    <div class="ao-guide-sub">CENRO</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ao-guide-card">
+                            <div class="ao-guide-title">Status Legend</div>
+                            <div class="ao-legend-item">
+                                <div class="sdot approved"></div>Approved (Waiting for Assignment)
+                            </div>
+                            <div class="ao-legend-item">
+                                <div class="sdot assigned"></div>Assigned
+                            </div>
+                            <div class="ao-legend-item">
+                                <div class="sdot progress"></div>In Progress
+                            </div>
+                            <div class="ao-legend-item">
+                                <div class="sdot resolved"></div>Resolved
+                            </div>
+                        </div>
+
+                        <div class="ao-guide-card">
+                            <div class="ao-guide-title">Quick Tips</div>
+                            <div class="ao-tip-item">
+                                <div class="ao-tip-icon"><span class="material-symbols-outlined">lightbulb</span></div>
+                                <span>Review the report details before assigning to an office.</span>
+                            </div>
+                            <div class="ao-tip-item">
+                                <div class="ao-tip-icon"><span class="material-symbols-outlined">lightbulb</span></div>
+                                <span>The system recommends the office based on the category.</span>
+                            </div>
+                            <div class="ao-tip-item">
+                                <div class="ao-tip-icon"><span class="material-symbols-outlined">lightbulb</span></div>
+                                <span>Once assigned, the report will be removed from this list.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- end ao-layout -->
+
+                <!-- ── Full-page Assign Form (hidden until Assign Office clicked) ── -->
+                <div id="assignFormView" style="display:none;">
+
+                    <a href="#" class="back-link" onclick="closeAssignForm(); return false;">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        Back to Report List
+                    </a>
+
+                    <div class="page-header" style="margin-bottom:20px;">
+                        <h1 class="page-title">Assign to Office</h1>
+                        <p class="page-subtitle">Choose the appropriate office that will handle this report.</p>
+                    </div>
+
+                    <!-- Report summary card -->
+                    <div class="af-summary-card">
+                        <img class="af-summary-photo" id="afPhoto" src="" alt="Report photo" />
+                        <div class="af-summary-fields">
+                            <div class="af-field">
+                                <div class="af-field-label"><span class="material-symbols-outlined">tag</span>Report ID</div>
+                                <div class="af-field-value primary-text" id="afRef">—</div>
+                            </div>
+                            <div class="af-field">
+                                <div class="af-field-label"><span class="material-symbols-outlined">warning</span>Issue</div>
+                                <div class="af-field-value" id="afIssue">—</div>
+                            </div>
+                            <div class="af-field">
+                                <div class="af-field-label"><span class="material-symbols-outlined">category</span>Category</div>
+                                <div class="af-field-value" id="afCategory">—</div>
+                            </div>
+                            <div class="af-field">
+                                <div class="af-field-label"><span class="material-symbols-outlined">location_on</span>Barangay</div>
+                                <div class="af-field-value" id="afBarangay">—</div>
+                            </div>
+                            <div class="af-field">
+                                <div class="af-field-label"><span class="material-symbols-outlined">calendar_today</span>Date Submitted</div>
+                                <div class="af-field-value" id="afDate">—</div>
+                            </div>
+                            <div class="af-field">
+                                <div class="af-field-label"><span class="material-symbols-outlined">person</span>Submitted By</div>
+                                <div class="af-field-value" id="afSubmittedBy">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2-col layout: form + right panel -->
+                    <div class="af-layout">
+
+                        <!-- LEFT: form card -->
+                        <div class="card card-padded">
+
+                            <!-- 1. Select Office -->
+                            <div class="af-section-title">1. Select Office</div>
+                            <p style="font-size:13px;color:var(--primary);margin-bottom:14px;">
+                                We recommend the office below for this report.
+                            </p>
+
+                            <div class="af-office-card sel" id="afOfficeCEO" data-office="CEO" onclick="selectOfficeCard(this,'CEO')">
+                                <div class="af-office-icon">
+                                    <span class="material-symbols-outlined">business</span>
+                                </div>
+                                <div class="af-office-info">
+                                    <div class="af-office-name-row">
+                                        <span class="af-office-name">City Engineering Office</span>
+                                        <span class="af-rec-badge" id="afCEOBadge">Recommended</span>
+                                    </div>
+                                    <div class="af-office-desc">Handles infrastructure issues like roads, road graveling, road repair, blocked canals, and streetlight concerns.</div>
+                                </div>
+                                <div class="af-office-check"><span class="material-symbols-outlined">check</span></div>
+                            </div>
+
+                            <div class="af-office-card" id="afOfficeCENRO" data-office="CENRO" onclick="selectOfficeCard(this,'CENRO')">
+                                <div class="af-office-icon env">
+                                    <span class="material-symbols-outlined">eco</span>
+                                </div>
+                                <div class="af-office-info">
+                                    <div class="af-office-name-row">
+                                        <span class="af-office-name">CENRO</span>
+                                        <span class="af-rec-badge" id="afCENROBadge" style="display:none;">Recommended</span>
+                                    </div>
+                                    <div class="af-office-desc">Handles environmental concerns such as illegal dumping, garbage collection, soil erosion, and overgrown vegetation.</div>
+                                </div>
+                                <div class="af-office-check"><span class="material-symbols-outlined">check</span></div>
+                            </div>
+
+                            <div style="margin-bottom:4px;">
+                                <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gray-400);font-weight:600;margin-bottom:8px;">OR CHOOSE ANOTHER OFFICE</p>
+                                <select class="af-other-select" id="afOtherSelect" onchange="selectOtherOffice(this.value)">
+                                    <option value="">Select another office</option>
+                                    <option value="CEO">City Engineering Office (CEO)</option>
+                                    <option value="CENRO">City Environment &amp; Natural Resources Office (CENRO)</option>
+                                </select>
+                            </div>
+
+                            <div class="af-divider"></div>
+
+                            <!-- 2. Set Priority -->
+                            <div class="af-section-title">2. Set Priority</div>
+                            <div class="af-pri-pills">
+                                <div class="af-pp" data-p="low" onclick="selectAfPP(this)">
+                                    <div class="af-pdot"></div>Low
+                                </div>
+                                <div class="af-pp sel" data-p="medium" onclick="selectAfPP(this)">
+                                    <div class="af-pdot"></div>Medium
+                                </div>
+                                <div class="af-pp" data-p="high" onclick="selectAfPP(this)">
+                                    <div class="af-pdot"></div>High
+                                </div>
+                            </div>
+
+                            <div class="af-divider"></div>
+
+                            <!-- 3. Notes -->
+                            <div class="af-section-title">3. Add Notes <span style="font-weight:400;color:var(--gray-400);font-size:13px;">(Optional)</span></div>
+                            <textarea class="af-textarea" id="afNotes" rows="3" maxlength="200" placeholder="Add notes or instructions for the assigned office..." oninput="document.getElementById('afCharCount').textContent=this.value.length"></textarea>
+                            <div style="text-align:right;font-size:12px;color:var(--gray-400);margin-top:4px;">
+                                <span id="afCharCount">0</span> / 200
+                            </div>
+
+                            <div class="af-actions">
+                                <button class="btn btn-secondary" onclick="closeAssignForm()">Cancel</button>
+                                <button class="btn btn-primary" id="afSubmitBtn" onclick="submitAssignForm()">
+                                    <span class="material-symbols-outlined">send</span> Assign Report
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: info panel -->
+                        <div style="display:flex;flex-direction:column;gap:14px;">
+                            <div class="af-info-card tip">
+                                <div class="af-info-header">
+                                    <div class="af-info-icon tip"><span class="material-symbols-outlined">lightbulb</span></div>
+                                    <span class="af-info-title">Tip</span>
+                                </div>
+                                <div class="af-info-body">We automatically suggest the best office based on the issue type and category. You can still change it if needed.</div>
+                            </div>
+                            <div class="af-info-card">
+                                <div class="af-info-header">
+                                    <div class="af-info-icon why"><span class="material-symbols-outlined">my_location</span></div>
+                                    <span class="af-info-title">Why this office?</span>
+                                </div>
+                                <div class="af-info-body" id="afWhyDesc">This office is responsible for infrastructure maintenance and repairs in the city.</div>
+                                <div class="af-info-sub">They will:</div>
+                                <div class="af-info-list">
+                                    <div class="af-info-item"><span class="material-symbols-outlined">check_circle</span>Review and assess the report</div>
+                                    <div class="af-info-item"><span class="material-symbols-outlined">check_circle</span>Coordinate inspection if needed</div>
+                                    <div class="af-info-item"><span class="material-symbols-outlined">check_circle</span>Take necessary actions</div>
+                                    <div class="af-info-item"><span class="material-symbols-outlined">check_circle</span>Update the status and progress</div>
+                                    <div class="af-info-item"><span class="material-symbols-outlined">check_circle</span>Resolve the issue</div>
+                                </div>
+                            </div>
+                            <div class="af-info-card warn">
+                                <div class="af-info-header">
+                                    <div class="af-info-icon warn"><span class="material-symbols-outlined">warning</span></div>
+                                    <span class="af-info-title">Reminder</span>
+                                </div>
+                                <div class="af-info-body">Once assigned, the office will be notified and the reporter can track the progress.</div>
+                            </div>
+                        </div>
+
+                    </div><!-- end af-layout -->
+                </div><!-- end assignFormView -->
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ── Shared overlay ─────────────────────────────── -->
+    <div class="ao-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+
+    <!-- ── View Report Modal ────────────────────────── -->
+    <div class="ao-modal view-modal" id="viewModal">
+        <div class="ao-mheader">
+            <div class="ao-mtitle">
+                <span class="ao-mstep">2. View Report Details</span>
+            </div>
+            <button class="ao-mclose" onclick="closeView()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="ao-mbody">
+            <div class="vm-grid" id="viewContent">
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400);">
+                    Loading...
+                </div>
+            </div>
+        </div>
+        <div class="ao-mfooter">
+            <button class="btn btn-secondary" onclick="closeView()">Close</button>
+            <button class="btn btn-primary" onclick="openAssignFromView()">
+                <span class="material-symbols-outlined">send</span> Assign Office
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Assign Office Modal ───────────────────────── -->
+    <div class="ao-modal assign-modal" id="assignModal">
+        <div class="ao-mheader">
+            <div class="ao-mtitle">
+                <span class="ao-mstep">3. Assign Office (Choose Office)</span>
+            </div>
+            <button class="ao-mclose" onclick="closeAssign()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="ao-mbody">
+            <div class="am-grid">
+
+                <!-- Left: report summary + recommended -->
+                <div>
+                    <p style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:10px;">Report Summary</p>
+                    <div class="am-summ">
+                        <div class="am-ref" id="amRef">—</div>
+                        <div class="am-title" id="amTitle">—</div>
+                        <div class="am-loc">
+                            <span class="material-symbols-outlined" style="font-size:13px;">location_on</span>
+                            <span id="amLoc">—</span>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <div style="font-size:11px;color:var(--gray-400);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Category</div>
+                            <div id="amCat">—</div>
+                        </div>
+                    </div>
+
+                    <p style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:8px;">Recommended Office</p>
+                    <div class="am-rec" id="amRecBox" style="background:var(--primary-light);">
+                        <div class="am-rec-icon">
+                            <span class="material-symbols-outlined" id="amRecIcon">construction</span>
+                        </div>
+                        <div>
+                            <div class="am-rec-tag">Recommended</div>
+                            <div class="am-rec-name" id="amRecName">City Engineering Office</div>
+                            <div class="am-rec-sub" id="amRecSub">Based on category: Infrastructure</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: form -->
+                <div>
+                    <div style="margin-bottom:16px;">
+                        <label class="am-label">
+                            Select Office <span style="color:#EF4444;">*</span>
+                        </label>
+                        <select class="am-select" id="amOfficeSelect">
+                            <option value="CEO">City Engineering Office</option>
+                            <option value="CENRO">CENRO (Environmental Office)</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom:16px;">
+                        <label class="am-label">
+                            Priority <span style="color:#EF4444;">*</span>
+                        </label>
+                        <div class="pri-pills">
+                            <div class="pp" data-p="low" onclick="selectPP(this)">
+                                <div class="pdot"></div>Low
+                            </div>
+                            <div class="pp sel" data-p="medium" onclick="selectPP(this)">
+                                <div class="pdot"></div>Medium
+                            </div>
+                            <div class="pp" data-p="high" onclick="selectPP(this)">
+                                <div class="pdot"></div>High
+                            </div>
+                            <div class="pp" data-p="critical" onclick="selectPP(this)">
+                                <div class="pdot"></div>Critical
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="am-label">Note (Optional)</label>
+                        <textarea class="am-ta" id="amNotes" rows="6" placeholder="Add any notes or instructions for the assigned office..."></textarea>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="ao-mfooter">
+            <button class="btn btn-secondary" onclick="closeAssign()">Cancel</button>
+            <button class="btn btn-primary" id="amSubmitBtn" onclick="submitAssign()">
+                <span class="material-symbols-outlined">send</span> Assign Report
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Success overlay + modal ───────────────────── -->
+    <div class="ao-overlay" id="successOverlay" onclick="closeSuccess()"></div>
+    <div class="ao-modal success-modal" id="successModal">
+        <div style="width:60px;height:60px;border-radius:50%;background:var(--status-resolved-bg);
+       display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <span class="material-symbols-outlined" style="font-size:32px;color:var(--status-resolved);">check_circle</span>
+        </div>
+        <div style="font-size:20px;font-weight:700;color:var(--gray-900);margin-bottom:8px;">Report Assigned!</div>
+        <div style="font-size:14px;color:var(--gray-500);margin-bottom:24px;">
+            Successfully assigned to <strong id="successOfficeName">—</strong>.<br>
+            The office has been notified.
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button class="btn btn-secondary" onclick="closeSuccess(); loadReports();">Assign Another</button>
+            <button class="btn btn-primary" onclick="location.href='monitoring.html'">View in Monitoring</button>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        // ── State ──────────────────────────────────────────────
+        var allReports = [];
+        var filtered = [];
+        var currentPage = 1;
+        var PER_PAGE = 8;
+        var activeReport = null;
+        var searchTimer = null;
+
+        var BARANGAYS = [
+            'Aplaya', 'Badiang', 'Baracatan', 'Bato', 'Carmen', 'Dawis', 'Digos Poblacion',
+            'Goma', 'Kansas', 'Kapatagan', 'Kiagot', 'Lungag', 'Mahayahay', 'Magsaysay',
+            'Matti', 'Ruparan', 'San Agustin', 'San Jose', 'San Miguel', 'Santa Cruz',
+            'Soong', 'Tiguman', 'Tres De Mayo', 'Zone I', 'Zone II', 'Zone III'
+        ];
+
+        // ── Boot ───────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            populateBarangays();
+            loadStats();
+            loadReports();
+        });
+
+        function populateBarangays() {
+            var sel = document.getElementById('filterBarangay');
+            BARANGAYS.forEach(function(b) {
+                var o = document.createElement('option');
+                o.value = b;
+                o.textContent = b;
+                sel.appendChild(o);
+            });
+        }
+
+        // ── Stats ──────────────────────────────────────────────
+        function loadStats() {
+            Api.get('/api/reports', {
+                    status: 'pending',
+                    per_page: 200
+                })
+                .then(function(json) {
+                    if (!json || !json.success) return;
+                    var reports = (json.data && json.data.data) ? json.data.data : (json.data || []);
+                    document.getElementById('statTotal').textContent = reports.length;
+                    document.getElementById('statInfra').textContent =
+                        reports.filter(function(r) {
+                            return r.category === 'infrastructure';
+                        }).length;
+                    document.getElementById('statEnv').textContent =
+                        reports.filter(function(r) {
+                            return r.category === 'environmental';
+                        }).length;
+                })
+                .catch(function() {});
+        }
+
+        // ── Load reports ───────────────────────────────────────
+        function loadReports() {
+            var list = document.getElementById('reportList');
+            list.innerHTML = '<div class="ao-empty"><span class="material-symbols-outlined">pending_actions</span>Loading reports...</div>';
+            Api.get('/api/reports', {
+                    status: 'pending',
+                    per_page: 200
+                })
+                .then(function(json) {
+                    if (!json || !json.success) throw new Error('API error');
+                    allReports = (json.data && json.data.data) ? json.data.data : (json.data || []);
+                    applyFilters();
+                })
+                .catch(function() {
+                    list.innerHTML = '<div class="ao-empty"><span class="material-symbols-outlined">error</span>Unable to load reports.</div>';
+                });
+        }
+
+        // ── Search + filters ───────────────────────────────────
+        function onSearch() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(applyFilters, 280);
+        }
+
+        function applyFilters() {
+            var q = document.getElementById('searchInput').value.trim().toLowerCase();
+            var cat = document.getElementById('filterCat').value;
+            var bgy = document.getElementById('filterBarangay').value;
+            var sort = document.getElementById('filterSort').value;
+
+            filtered = allReports.filter(function(r) {
+                if (cat && r.category !== cat) return false;
+                if (bgy && r.barangay !== bgy) return false;
+                if (q) {
+                    var haystack = [r.reference_no, r.title, r.barangay, r.submitted_by]
+                        .join(' ').toLowerCase();
+                    if (haystack.indexOf(q) === -1) return false;
+                }
+                return true;
+            });
+
+            var pmap = {
+                critical: 4,
+                high: 3,
+                medium: 2,
+                low: 1
+            };
+            if (sort === 'oldest') {
+                filtered.sort(function(a, b) {
+                    return new Date(a.created_at) - new Date(b.created_at);
+                });
+            } else if (sort === 'high') {
+                filtered.sort(function(a, b) {
+                    return (pmap[b.priority] || 0) - (pmap[a.priority] || 0);
+                });
+            } else {
+                filtered.sort(function(a, b) {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+            }
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        // ── Render table ───────────────────────────────────────
+        function renderTable() {
+            var list = document.getElementById('reportList');
+            var start = (currentPage - 1) * PER_PAGE;
+            var page = filtered.slice(start, start + PER_PAGE);
+            var total = filtered.length;
+
+            if (total === 0) {
+                list.innerHTML = '<div class="ao-empty"><span class="material-symbols-outlined">inbox</span>No pending reports found.</div>';
+                document.getElementById('pgInfo').textContent = 'Showing 0 reports';
+                document.getElementById('pgBtns').innerHTML = '';
+                return;
+            }
+
+            var rows = page.map(function(r) {
+                var catBadge = r.category === 'infrastructure' ?
+                    '<span class="badge-infra"><span class="material-symbols-outlined">construction</span>Infrastructure</span>' :
+                    '<span class="badge-env"><span class="material-symbols-outlined">eco</span>Environmental</span>';
+
+                var photo = 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=120&h=90&fit=crop&q=70';
+                if (r.before_photo && r.before_photo.cloudinary_url) {
+                    photo = r.before_photo.cloudinary_url;
+                } else if (r.category === 'environmental') {
+                    photo = 'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=120&h=90&fit=crop&q=70';
+                }
+
+                var barangay = r.barangay || '—';
+                var date = fmtDate(r.created_at);
+
+                return '<div class="ao-report-row">' +
+                    '<img class="ao-thumb" src="' + photo + '" alt="' + r.title + '" ' +
+                    'onerror="this.src=\'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=120&h=90&fit=crop&q=70\'" />' +
+                    '<div>' +
+                    '<div class="ao-ref">' + r.reference_no + '</div>' +
+                    '<div class="ao-rtitle">' + r.title + '</div>' +
+                    '<div class="ao-loc"><span class="material-symbols-outlined">location_on</span>' + barangay + ', Digos City</div>' +
+                    '</div>' +
+                    '<div>' + catBadge + '</div>' +
+                    '<div class="status-dot-cell"><div class="sdot approved"></div>Approved</div>' +
+                    '<div class="ao-date">' + date + '</div>' +
+                    '<div class="ao-actions">' +
+                    '<button class="btn-view" onclick="openView(' + r.id + ')">View Report</button>' +
+                    '<button class="btn-assign-sm" onclick="openAssign(' + r.id + ')">Assign Office</button>' +
+                    '</div>' +
+                    '</div>';
+            });
+
+            list.innerHTML = rows.join('');
+
+            // Pagination info
+            document.getElementById('pgInfo').textContent =
+                'Showing ' + (start + 1) + ' to ' + Math.min(start + PER_PAGE, total) +
+                ' of ' + total + ' report' + (total !== 1 ? 's' : '');
+
+            // Pagination buttons
+            var pages = Math.ceil(total / PER_PAGE);
+            var html = '<button class="pg-btn" onclick="goPage(' + (currentPage - 1) + ')"' +
+                (currentPage === 1 ? ' disabled' : '') + '>' +
+                '<span class="material-symbols-outlined">chevron_left</span></button>';
+            for (var i = 1; i <= pages; i++) {
+                html += '<button class="pg-btn' + (i === currentPage ? ' active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+            }
+            html += '<button class="pg-btn" onclick="goPage(' + (currentPage + 1) + ')"' +
+                (currentPage === pages ? ' disabled' : '') + '>' +
+                '<span class="material-symbols-outlined">chevron_right</span></button>';
+            document.getElementById('pgBtns').innerHTML = html;
+        }
+
+        function goPage(p) {
+            var pages = Math.ceil(filtered.length / PER_PAGE);
+            if (p < 1 || p > pages) return;
+            currentPage = p;
+            renderTable();
+            document.querySelector('.ao-layout').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+        // ── Helpers ────────────────────────────────────────────
+        function fmtDate(str) {
+            if (!str) return '—';
+            var d = new Date(str);
+            return d.toLocaleDateString('en-PH', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                }) +
+                ' · ' + d.toLocaleTimeString('en-PH', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+        }
+
+        function recOffice(category) {
+            return category === 'environmental' ? 'CENRO' : 'CEO';
+        }
+
+        function findReport(id) {
+            for (var i = 0; i < allReports.length; i++) {
+                if (allReports[i].id === id) return allReports[i];
+            }
+            return null;
+        }
+
+        // ── View modal ─────────────────────────────────────────
+        function openView(id) {
+            activeReport = findReport(id);
+            document.getElementById('modalOverlay').classList.add('open');
+            document.getElementById('viewModal').classList.add('open');
+
+            var content = document.getElementById('viewContent');
+            content.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400);">Loading...</div>';
+
+            Api.get('/api/reports/' + id)
+                .then(function(json) {
+                    if (!json || !json.success) throw new Error();
+                    var r = json.data;
+                    activeReport = r;
+
+                    var catBadge = r.category === 'infrastructure' ?
+                        '<span class="badge-infra"><span class="material-symbols-outlined">construction</span>Infrastructure</span>' :
+                        '<span class="badge-env"><span class="material-symbols-outlined">eco</span>Environmental</span>';
+
+                    var photo = 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop&q=80';
+                    if (r.photos && r.photos.length > 0 && r.photos[0].cloudinary_url) {
+                        photo = r.photos[0].cloudinary_url;
+                    } else if (r.category === 'environmental') {
+                        photo = 'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=400&h=300&fit=crop&q=80';
+                    }
+
+                    var tlHtml = '';
+                    if (r.timeline && r.timeline.length > 0) {
+                        var rows = r.timeline.map(function(t) {
+                            return '<div class="vm-tl-row">' +
+                                '<div class="vm-tl-dot' + (t.to_status === 'resolved' ? ' done' : '') + '"></div>' +
+                                '<div>' +
+                                '<div class="vm-tl-note">' + (t.note || t.action) + '</div>' +
+                                '<div class="vm-tl-time">' + fmtDate(t.created_at) + '</div>' +
+                                '</div></div>';
+                        });
+                        tlHtml = '<div class="vm-tl"><div class="vm-tl-h">Status Timeline</div>' + rows.join('') + '</div>';
+                    }
+
+                    content.innerHTML =
+                        '<div>' +
+                        '<img class="vm-photo" src="' + photo + '" alt="' + r.title + '" ' +
+                        'onerror="this.src=\'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop&q=80\'" />' +
+                        '</div>' +
+                        '<div>' +
+                        '<div class="vm-badges">' + catBadge +
+                        '<span class="badge badge-validation"><span class="material-symbols-outlined">schedule</span>Pending Validation</span>' +
+                        '</div>' +
+                        '<div class="vm-title">' + r.title + '</div>' +
+                        '<div class="vm-loc"><span class="material-symbols-outlined" style="font-size:14px;">location_on</span>' +
+                        (r.barangay || '—') + ', Digos City</div>' +
+                        '<div class="vm-dlabel">Description</div>' +
+                        '<div class="vm-desc">' + (r.description || '—') + '</div>' +
+                        '<div class="vm-meta">' +
+                        '<div class="vm-meta-item"><strong>' + r.reference_no + '</strong>Reference No.</div>' +
+                        '<div class="vm-meta-item"><strong>' + (r.submitted_by || '—') + '</strong>Submitted By</div>' +
+                        '<div class="vm-meta-item"><strong>' + (r.submitted_contact || '—') + '</strong>Contact</div>' +
+                        '<div class="vm-meta-item"><strong>' + fmtDate(r.created_at) + '</strong>Date Submitted</div>' +
+                        '</div>' +
+                        tlHtml +
+                        '</div>';
+                })
+                .catch(function() {
+                    content.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400);">Unable to load report details.</div>';
+                });
+        }
+
+        function closeView() {
+            document.getElementById('viewModal').classList.remove('open');
+            document.getElementById('modalOverlay').classList.remove('open');
+        }
+
+        function openAssignFromView() {
+            closeView();
+            if (activeReport) openAssign(activeReport.id);
+        }
+
+        // ── Assign form (full page view) ──────────────────────
+        function openAssign(id) {
+            var r = findReport(id) || activeReport;
+            if (!r) return;
+            activeReport = r;
+
+            // Show form immediately with placeholder photo while detail loads
+            var fallback = r.category === 'environmental' ?
+                'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=240&h=200&fit=crop&q=80' :
+                'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=240&h=200&fit=crop&q=80';
+
+            document.getElementById('afPhoto').src = fallback;
+            document.getElementById('afRef').textContent = r.reference_no;
+            document.getElementById('afIssue').textContent = r.title;
+            document.getElementById('afBarangay').textContent = r.barangay || '—';
+            document.getElementById('afDate').textContent = fmtDate(r.created_at);
+            document.getElementById('afSubmittedBy').textContent = r.submitted_by || '—';
+
+            var catBadge = r.category === 'infrastructure' ?
+                '<span class="badge-infra"><span class="material-symbols-outlined">construction</span>Infrastructure</span>' :
+                '<span class="badge-env"><span class="material-symbols-outlined">eco</span>Environmental</span>';
+            document.getElementById('afCategory').innerHTML = catBadge;
+
+            // Fetch full detail to get actual photo
+            Api.get('/api/reports/' + id)
+                .then(function(json) {
+                    if (!json || !json.success) return;
+                    var detail = json.data;
+                    if (detail.photos && detail.photos.length > 0 && detail.photos[0].cloudinary_url) {
+                        document.getElementById('afPhoto').src = detail.photos[0].cloudinary_url;
+                    }
+                })
+                .catch(function() {});
+
+            // Set recommended office
+            var rec = recOffice(r.category);
+            var ceoBadge = document.getElementById('afCEOBadge');
+            var cenroBadge = document.getElementById('afCENROBadge');
+            var ceoCard = document.getElementById('afOfficeCEO');
+            var cenroCard = document.getElementById('afOfficeCENRO');
+
+            if (rec === 'CEO') {
+                ceoCard.classList.add('sel');
+                cenroCard.classList.remove('sel');
+                ceoBadge.style.display = 'inline';
+                cenroBadge.style.display = 'none';
+                document.getElementById('afWhyDesc').textContent =
+                    'This office is responsible for infrastructure maintenance and repairs in the city.';
+            } else {
+                cenroCard.classList.add('sel');
+                ceoCard.classList.remove('sel');
+                cenroBadge.style.display = 'inline';
+                ceoBadge.style.display = 'none';
+                document.getElementById('afWhyDesc').textContent =
+                    'CENRO handles all environmental concerns including waste management, soil erosion, and vegetation clearing.';
+            }
+
+            // Reset form fields
+            document.getElementById('afOtherSelect').value = '';
+            document.querySelectorAll('.af-pp').forEach(function(p) {
+                p.classList.remove('sel');
+            });
+            var med = document.querySelector('.af-pp[data-p="medium"]');
+            if (med) med.classList.add('sel');
+            document.getElementById('afNotes').value = '';
+            document.getElementById('afCharCount').textContent = '0';
+
+            // Show form, hide list
+            document.querySelector('.ao-stats').style.display = 'none';
+            document.querySelector('.ao-layout').style.display = 'none';
+            document.getElementById('assignFormView').style.display = 'block';
+        }
+
+        function closeAssignForm() {
+            document.querySelector('.ao-stats').style.display = '';
+            document.querySelector('.ao-layout').style.display = '';
+            document.getElementById('assignFormView').style.display = 'none';
+            activeReport = null;
+        }
+
+        function selectOfficeCard(el, office) {
+            document.querySelectorAll('.af-office-card').forEach(function(c) {
+                c.classList.remove('sel');
+            });
+            el.classList.add('sel');
+            document.getElementById('afOtherSelect').value = '';
+            var descs = {
+                CEO: 'This office is responsible for infrastructure maintenance and repairs in the city.',
+                CENRO: 'CENRO handles all environmental concerns including waste management, soil erosion, and vegetation clearing.'
+            };
+            var whyEl = document.getElementById('afWhyDesc');
+            if (whyEl) whyEl.textContent = descs[office] || '';
+        }
+
+        function selectOtherOffice(val) {
+            if (!val) return;
+            document.querySelectorAll('.af-office-card').forEach(function(c) {
+                c.classList.remove('sel');
+            });
+            var descs = {
+                CEO: 'This office is responsible for infrastructure maintenance and repairs in the city.',
+                CENRO: 'CENRO handles all environmental concerns including waste management and vegetation.'
+            };
+            var whyEl = document.getElementById('afWhyDesc');
+            if (whyEl) whyEl.textContent = descs[val] || 'This office handles the assigned type of concern.';
+        }
+
+        function selectAfPP(el) {
+            document.querySelectorAll('.af-pp').forEach(function(p) {
+                p.classList.remove('sel');
+            });
+            el.classList.add('sel');
+        }
+
+        function submitAssignForm() {
+            if (!activeReport) return;
+
+            var selCard = document.querySelector('.af-office-card.sel');
+            var otherSel = document.getElementById('afOtherSelect').value;
+            var office = otherSel || (selCard ? selCard.getAttribute('data-office') : '');
+            var selPill = document.querySelector('.af-pp.sel');
+            var priority = selPill ? selPill.getAttribute('data-p') : 'medium';
+            var notes = document.getElementById('afNotes').value.trim();
+            var btn = document.getElementById('afSubmitBtn');
+
+            if (!office) {
+                Utils.showToast('Please select an office.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="animation:spin 1s linear infinite;">sync</span> Assigning...';
+
+            var payload = {
+                assigned_to: office,
+                priority: priority
+            };
+            if (notes) payload.notes = notes;
+
+            Api.post('/api/reports/' + activeReport.id + '/assign', payload)
+                .then(function(json) {
+                    if (!json || !json.success) {
+                        throw new Error(json && json.message ? json.message : 'Assignment failed.');
+                    }
+                    var names = {
+                        CEO: 'City Engineering Office',
+                        CENRO: 'CENRO'
+                    };
+                    document.getElementById('successOfficeName').textContent = names[office] || office;
+
+                    closeAssignForm();
+                    allReports = allReports.filter(function(r) {
+                        return r.id !== activeReport.id;
+                    });
+                    activeReport = null;
+                    applyFilters();
+                    loadStats();
+
+                    document.getElementById('successOverlay').classList.add('open');
+                    document.getElementById('successModal').classList.add('open');
+                })
+                .catch(function(e) {
+                    Utils.showToast(e.message || 'Failed to assign report.', 'error');
+                })
+                .finally(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined">send</span> Assign Report';
+                });
+        }
+
+        function closeAssign() {} // kept for modal close button compatibility
+        function closeAllModals() {
+            closeView();
+        }
+
+        function selectPP(el) {} // modal pills — unused now
+
+        // ── Success modal ──────────────────────────────────────
+        function closeSuccess() {
+            document.getElementById('successModal').classList.remove('open');
+            document.getElementById('successOverlay').classList.remove('open');
+        }
+    </script>
+</body>
+
+</html>

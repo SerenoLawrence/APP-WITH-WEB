@@ -1,0 +1,127 @@
+:root {
+  /* Primary Colors */
+  --primary: #1A56DB;
+  --primary-dark: #1344B5;
+  --primary-light: #EEF3FF;
+  --primary-hover: #1648C8;
+
+  /* Status Colors */
+  --status-pending: #F59E0B;
+  --status-pending-bg: #FFFBEB;
+  --status-pending-border: #FDE68A;
+
+  --status-assigned: #1A56DB;
+  --status-assigned-bg: #EEF3FF;
+  --status-assigned-border: #BFDBFE;
+
+  --status-inprogress: #F97316;
+  --status-inprogress-bg: #FFF7ED;
+  --status-inprogress-border: #FED7AA;
+
+  --status-resolved: #10B981;
+  --status-resolved-bg: #ECFDF5;
+  --status-resolved-border: #A7F3D0;
+
+  --status-validation: #F59E0B;
+  --status-validation-bg: #FFFBEB;
+
+  /* Neutral Colors */
+  --white: #FFFFFF;
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
+
+  /* Category Colors */
+  --infra-color: #1A56DB;
+  --infra-bg: #EEF3FF;
+  --env-color: #10B981;
+  --env-bg: #ECFDF5;
+
+  /* Sidebar */
+  --sidebar-bg: #1344B5;
+  --sidebar-width: 240px;
+  --sidebar-text: rgba(255,255,255,0.75);
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-hover: rgba(255,255,255,0.1);
+  --sidebar-active: rgba(255,255,255,0.15);
+
+  /* Layout */
+  --navbar-height: 64px;
+  --content-padding: 28px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.05);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 22px;
+  --font-size-3xl: 28px;
+
+  /* Transitions */
+  --transition: all 0.2s ease;
+  --transition-fast: all 0.15s ease;
+}
+
+/* ════════════════════════════════════════════
+   DARK MODE — applied via [data-theme="dark"]
+   ════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --white:     #1E2330;
+  --gray-50:   #161B27;
+  --gray-100:  #252D3D;
+  --gray-200:  #2E3A50;
+  --gray-300:  #3D4E68;
+  --gray-400:  #5A6B85;
+  --gray-500:  #7A8FA8;
+  --gray-600:  #9BAEC4;
+  --gray-700:  #B8CCDF;
+  --gray-800:  #D4E2EF;
+  --gray-900:  #EDF2F7;
+
+  --primary:       #4D8EFF;
+  --primary-dark:  #2B6FE8;
+  --primary-light: rgba(77,142,255,0.12);
+
+  --sidebar-bg:     #111827;
+  --sidebar-hover:  rgba(255,255,255,0.07);
+  --sidebar-active: rgba(77,142,255,0.18);
+  --sidebar-text:   rgba(255,255,255,0.6);
+
+  --status-pending-bg:      rgba(245,158,11,0.15);
+  --status-pending-border:  rgba(245,158,11,0.3);
+  --status-assigned-bg:     rgba(77,142,255,0.15);
+  --status-assigned-border: rgba(77,142,255,0.3);
+  --status-inprogress-bg:   rgba(249,115,22,0.15);
+  --status-inprogress-border:rgba(249,115,22,0.3);
+  --status-resolved-bg:     rgba(16,185,129,0.15);
+  --status-resolved-border: rgba(16,185,129,0.3);
+
+  --infra-bg: rgba(77,142,255,0.12);
+  --env-bg:   rgba(16,185,129,0.12);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.2);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.25);
+}

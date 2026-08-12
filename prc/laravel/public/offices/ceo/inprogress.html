@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+    (function() {
+        var role = localStorage.getItem('cw_role');
+        if (!role) {
+            window.location.replace('../../index.html');
+        } else if (role !== 'ceo') {
+            window.location.replace(role === 'super_admin' ? '../../dashboard.html' : '../cenro/dashboard.html');
+        }
+    })();
+</script>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Active Reports — City Engineering Office</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="/css/variables.css" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/sidebar.css" />
+    <link rel="stylesheet" href="/css/navbar.css" />
+    <link rel="stylesheet" href="/css/cards.css" />
+    <link rel="stylesheet" href="/css/buttons.css" />
+    <link rel="stylesheet" href="/css/tables.css" />
+    <link rel="stylesheet" href="/css/badges.css" />
+    <link rel="stylesheet" href="/css/forms.css" />
+    <link rel="stylesheet" href="/css/responsive.css" />
+    <style>
+        /* ── Accent ── */
+        :root {
+            --office-color: #1A56DB;
+            --office-light: #EFF6FF;
+        }
+
+        /* ── Stat cards ── */
+        .active-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .active-stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .active-stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .active-stat-icon .material-symbols-outlined {
+            font-size: 24px;
+        }
+
+        .active-stat-icon.inprogress {
+            background: #FFF7ED;
+            color: #F97316;
+        }
+
+        .active-stat-icon.resolution {
+            background: #FFFBEB;
+            color: #F59E0B;
+        }
+
+        .active-stat-icon.assigned {
+            background: var(--office-light);
+            color: var(--office-color);
+        }
+
+        .active-stat-val {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1;
+        }
+
+        .active-stat-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-top: 3px;
+        }
+
+        .active-stat-link {
+            font-size: 11px;
+            color: var(--office-color);
+            font-weight: 600;
+            margin-top: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        /* ── Main layout: list + right panel ── */
+        .active-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ── Toolbar ── */
+        .active-toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .active-toolbar .search-input-wrap {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        /* ── Report list card ── */
+        .report-list-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-bottom: 1px solid var(--gray-100);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .report-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .report-list-item:hover {
+            background: var(--gray-50);
+        }
+
+        .report-list-thumb {
+            width: 80px;
+            height: 64px;
+            border-radius: var(--radius-sm);
+            object-fit: cover;
+            flex-shrink: 0;
+            background: var(--gray-100);
+        }
+
+        .report-list-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .report-list-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 3px;
+        }
+
+        .report-list-meta {
+            font-size: 12px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .report-list-meta .material-symbols-outlined {
+            font-size: 14px;
+            color: var(--gray-400);
+        }
+
+        .report-list-meta .ref-link {
+            color: var(--office-color);
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .report-list-meta .assigned-by {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .report-list-meta .assigned-by .material-symbols-outlined {
+            font-size: 13px;
+        }
+
+        .report-list-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            flex-shrink: 0;
+            min-width: 140px;
+        }
+
+        .report-list-started {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        .report-list-started strong {
+            display: block;
+            font-size: 12px;
+            color: var(--gray-700);
+        }
+
+        /* Status pill */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pill.inprogress {
+            background: #FFF7ED;
+            color: #F97316;
+        }
+
+        .status-pill.resolution {
+            background: #FFFBEB;
+            color: #F59E0B;
+        }
+
+        .status-pill.assigned {
+            background: var(--office-light);
+            color: var(--office-color);
+        }
+
+        /* Continue button */
+        .btn-continue {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--office-color);
+            background: none;
+            color: var(--office-color);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: var(--font-family);
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .btn-continue:hover {
+            background: var(--office-light);
+        }
+
+        .btn-continue .material-symbols-outlined {
+            font-size: 15px;
+        }
+
+        /* ── Right info panel ── */
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .info-panel-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 18px 20px;
+        }
+
+        .info-panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-panel-title .material-symbols-outlined {
+            font-size: 18px;
+            color: var(--office-color);
+        }
+
+        .info-panel-desc {
+            font-size: 12px;
+            color: var(--gray-500);
+            line-height: 1.65;
+            margin-bottom: 14px;
+        }
+
+        .info-panel-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 3px;
+        }
+
+        .legend-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 2px;
+        }
+
+        .legend-sub {
+            font-size: 11px;
+            color: var(--gray-400);
+        }
+
+        .tips-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tip-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--gray-600);
+            line-height: 1.55;
+        }
+
+        .tip-row .material-symbols-outlined {
+            font-size: 15px;
+            color: #10B981;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* Footer */
+        .office-footer {
+            text-align: center;
+            font-size: 12px;
+            color: var(--gray-400);
+            padding: 24px 0 8px;
+        }
+
+        [data-theme="dark"] .active-stat-card {
+            background: #1E2330;
+            border-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .report-list-item:hover {
+            background: var(--gray-100);
+        }
+
+        [data-theme="dark"] .info-panel-card {
+            background: #1E2330;
+            border-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .report-list-title {
+            color: var(--gray-900);
+        }
+    </style>
+</head>
+
+<body data-page="inprogress">
+    <div class="app-wrapper">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-area" id="mainArea">
+            <nav class="navbar" id="navbar"></nav>
+            <main class="page-content">
+
+                <!-- Header -->
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Active Reports</h1>
+                        <p class="page-subtitle">Infrastructure reports that are currently being worked on by City Engineering Office.</p>
+                    </div>
+                </div>
+
+                <!-- Stat cards -->
+                <div class="active-stats">
+                    <div class="active-stat-card">
+                        <div class="active-stat-icon inprogress">
+                            <span class="material-symbols-outlined">autorenew</span>
+                        </div>
+                        <div>
+                            <div class="active-stat-val" id="countInProgress">0</div>
+                            <div class="active-stat-label">In Progress</div>
+                            <a class="active-stat-link" onclick="filterBy('In Progress')">View all</a>
+                        </div>
+                    </div>
+                    <div class="active-stat-card">
+                        <div class="active-stat-icon resolution">
+                            <span class="material-symbols-outlined">flag</span>
+                        </div>
+                        <div>
+                            <div class="active-stat-val" id="countResolution">0</div>
+                            <div class="active-stat-label">For Resolution</div>
+                            <a class="active-stat-link" onclick="filterBy('For Resolution')">View all</a>
+                        </div>
+                    </div>
+                    <div class="active-stat-card">
+                        <div class="active-stat-icon assigned">
+                            <span class="material-symbols-outlined">assignment_ind</span>
+                        </div>
+                        <div>
+                            <div class="active-stat-val" id="countAssigned">0</div>
+                            <div class="active-stat-label">Assigned</div>
+                            <a class="active-stat-link" onclick="filterBy('Assigned')">View all</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main layout -->
+                <div class="active-layout">
+
+                    <!-- Left: list -->
+                    <div>
+                        <!-- Toolbar -->
+                        <div class="active-toolbar">
+                            <div class="search-input-wrap">
+                                <span class="material-symbols-outlined">search</span>
+                                <input type="text" class="search-input" id="searchInput" placeholder="Search active reports..." />
+                            </div>
+                            <select class="filter-select" id="categoryFilter">
+                                <option value="">All Category</option>
+                                <option value="Road Repair">Road Repair</option>
+                                <option value="Road Graveling">Road Graveling</option>
+                                <option value="Streetlight / Light Pole Concern">Streetlight / Light Pole Concern</option>
+                                <option value="Blocked Canal">Blocked Canal</option>
+                                <option value="Others">Others</option>
+                            </select>
+                            <select class="filter-select" id="barangayFilter">
+                                <option value="">All Barangay</option>
+                                <option value="Poblacion">Poblacion</option>
+                                <option value="Zone 2">Zone 2</option>
+                                <option value="Zone 3">Zone 3</option>
+                                <option value="Badiang">Badiang</option>
+                                <option value="Aplaya">Aplaya</option>
+                                <option value="Buhangin">Buhangin</option>
+                            </select>
+                            <select class="filter-select" id="sortFilter">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
+
+                        <!-- List -->
+                        <div class="card" style="padding:0;overflow:hidden;">
+                            <div id="reportList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right: info panel -->
+                    <div class="info-panel">
+                        <div class="info-panel-card">
+                            <div class="info-panel-title">
+                                <span class="material-symbols-outlined">info</span>
+                                About Active Reports
+                            </div>
+                            <p class="info-panel-desc">These are infrastructure reports that are currently being processed by City Engineering Office.</p>
+                            <div class="info-panel-legend">
+                                <div class="legend-row">
+                                    <div class="legend-dot" style="background:#F97316;"></div>
+                                    <div>
+                                        <div class="legend-label">In Progress</div>
+                                        <div class="legend-sub">Work has started on this report.</div>
+                                    </div>
+                                </div>
+                                <div class="legend-row">
+                                    <div class="legend-dot" style="background:#1A56DB;"></div>
+                                    <div>
+                                        <div class="legend-label">Assigned</div>
+                                        <div class="legend-sub">Report is assigned and awaiting action.</div>
+                                    </div>
+                                </div>
+                                <div class="legend-row">
+                                    <div class="legend-dot" style="background:#F59E0B;"></div>
+                                    <div>
+                                        <div class="legend-label">For Resolution</div>
+                                        <div class="legend-sub">Issues are resolved and waiting for finalisation.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-panel-card">
+                            <div class="info-panel-title">
+                                <span class="material-symbols-outlined">lightbulb</span>
+                                Quick Tips
+                            </div>
+                            <div class="tips-list">
+                                <div class="tip-row">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                    Click "Continue" to update the progress of a report.
+                                </div>
+                                <div class="tip-row">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                    Add remarks and photos to keep the residents informed.
+                                </div>
+                                <div class="tip-row">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                    Mark as resolved once the issue has been fully addressed.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="office-footer">© 2026 CIVILWATCH Digos City. All rights reserved.</div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        const activeData = [{
+                ref: 'CW-2026-00132',
+                issue: 'Potholes on Rizal Street',
+                barangay: 'Poblacion, Digos City',
+                date: 'May 21, 2026',
+                time: '9:20 AM',
+                status: 'In Progress',
+                photo: 'Damaged Road',
+                assignedBy: 'TAPIK (Super Admin)'
+            },
+            {
+                ref: 'CW-2026-00131',
+                issue: 'Damaged Sidewalk',
+                barangay: 'Zone 2, Digos City',
+                date: 'May 21, 2026',
+                time: '8:45 AM',
+                status: 'In Progress',
+                photo: 'Damaged Sidewalk',
+                assignedBy: 'TAPIK (Super Admin)'
+            },
+            {
+                ref: 'CW-2026-00130',
+                issue: 'Broken Streetlight',
+                barangay: 'Zone 3, Digos City',
+                date: 'May 20, 2026',
+                time: '7:30 PM',
+                status: 'For Resolution',
+                photo: 'Broken Streetlight',
+                assignedBy: 'TAPIK (Super Admin)'
+            },
+            {
+                ref: 'CW-2026-00129',
+                issue: 'Blocked Drainage',
+                barangay: 'Badiang, Digos City',
+                date: 'May 20, 2026',
+                time: '4:10 PM',
+                status: 'In Progress',
+                photo: 'Blocked Drainage',
+                assignedBy: 'TAPIK (Super Admin)'
+            },
+            {
+                ref: 'CW-2026-00127',
+                issue: 'Road Sign Damage',
+                barangay: 'Aplaya, Digos City',
+                date: 'May 19, 2026',
+                time: '2:00 PM',
+                status: 'Assigned',
+                photo: 'Road Sign Damage',
+                assignedBy: 'TAPIK (Super Admin)'
+            },
+            {
+                ref: 'CW-2026-00126',
+                issue: 'Damaged Bridge Railing',
+                barangay: 'Zone 3, Digos City',
+                date: 'May 18, 2026',
+                time: '11:30 AM',
+                status: 'In Progress',
+                photo: 'Damaged Bridge',
+                assignedBy: 'TAPIK (Super Admin)'
+            },
+            {
+                ref: 'CW-2026-00124',
+                issue: 'Road Crack on National Hwy',
+                barangay: 'Buhangin, Digos City',
+                date: 'May 17, 2026',
+                time: '9:00 AM',
+                status: 'For Resolution',
+                photo: 'Damaged Road',
+                assignedBy: 'TAPIK (Super Admin)'
+            },
+        ];
+
+        const statusPillMap = {
+            'In Progress': '<span class="status-pill inprogress">In Progress</span>',
+            'For Resolution': '<span class="status-pill resolution">For Resolution</span>',
+            'Assigned': '<span class="status-pill assigned">Assigned</span>',
+        };
+
+        let filtered = [...activeData];
+
+        // Update stat counts
+        function updateCounts(data) {
+            document.getElementById('countInProgress').textContent = data.filter(r => r.status === 'In Progress').length;
+            document.getElementById('countResolution').textContent = data.filter(r => r.status === 'For Resolution').length;
+            document.getElementById('countAssigned').textContent = data.filter(r => r.status === 'Assigned').length;
+        }
+
+        function render() {
+            updateCounts(filtered);
+            const list = document.getElementById('reportList');
+            if (!filtered.length) {
+                list.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--gray-400);">No active reports found.</div>`;
+                return;
+            }
+            list.innerHTML = filtered.map(r => `
+    <div class="report-list-item" onclick="location.href='report-details.html?ref=${r.ref}'">
+      <img class="report-list-thumb"
+           src="${getPhotoUrl(r.issue)}"
+           onerror="this.style.background='var(--gray-200)';this.removeAttribute('src')"
+           alt="${r.issue}" />
+      <div class="report-list-body">
+        <div class="report-list-title">${r.issue}</div>
+        <div class="report-list-meta">
+          <span class="material-symbols-outlined">location_on</span>
+          ${r.barangay}
+          &nbsp;&bull;&nbsp;
+          <span class="ref-link">${r.ref}</span>
+          &nbsp;&bull;&nbsp;
+          ${r.date} &bull; ${r.time}
+        </div>
+        <div class="report-list-meta assigned-by" style="margin-top:4px;">
+          <span class="material-symbols-outlined">person</span>
+          Assigned by ${r.assignedBy}
+        </div>
+      </div>
+      <div class="report-list-right">
+        ${statusPillMap[r.status] || ''}
+        <div class="report-list-started">
+          Started<strong>${r.date}</strong>
+        </div>
+        <button class="btn-continue" onclick="event.stopPropagation();location.href='report-details.html?ref=${r.ref}'">
+          Continue <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+        }
+
+        function filterBy(status) {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('barangayFilter').value = '';
+            filtered = activeData.filter(r => r.status === status);
+            render();
+        }
+
+        const doFilter = Utils.debounce(() => {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const cat = document.getElementById('categoryFilter').value;
+            const bar = document.getElementById('barangayFilter').value;
+            const srt = document.getElementById('sortFilter').value;
+            filtered = activeData.filter(r =>
+                (!q || r.issue.toLowerCase().includes(q) || r.ref.toLowerCase().includes(q) || r.barangay.toLowerCase().includes(q)) &&
+                (!cat || r.issue === cat) &&
+                (!bar || r.barangay.includes(bar))
+            );
+            if (srt === 'oldest') filtered = [...filtered].reverse();
+            render();
+        }, 250);
+
+        document.getElementById('searchInput').addEventListener('input', doFilter);
+        document.getElementById('categoryFilter').addEventListener('change', doFilter);
+        document.getElementById('barangayFilter').addEventListener('change', doFilter);
+        document.getElementById('sortFilter').addEventListener('change', doFilter);
+
+        render();
+    </script>
+</body>
+
+</html>

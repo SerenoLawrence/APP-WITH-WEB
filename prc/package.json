@@ -1,0 +1,16 @@
+{
+  "name": "bird-api-project",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "ts-node --esm src/index.ts"
+  },
+  "dependencies": {
+    "@messagebird/sdk": "latest"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "@types/node": "^20.0.0"
+  }
+}

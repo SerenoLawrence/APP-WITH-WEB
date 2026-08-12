@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+    (function() {
+        var role = localStorage.getItem('cw_role');
+        if (!role) {
+            window.location.replace('index.html');
+        } else if (role !== 'super_admin') {
+            window.location.replace(role === 'ceo' ? 'offices/ceo/dashboard.html' : 'offices/cenro/dashboard.html');
+        }
+    })();
+</script>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings — CIVILWATCH Admin</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="/css/variables.css" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/sidebar.css" />
+    <link rel="stylesheet" href="/css/navbar.css" />
+    <link rel="stylesheet" href="/css/cards.css" />
+    <link rel="stylesheet" href="/css/buttons.css" />
+    <link rel="stylesheet" href="/css/tables.css" />
+    <link rel="stylesheet" href="/css/badges.css" />
+    <link rel="stylesheet" href="/css/forms.css" />
+    <link rel="stylesheet" href="/css/responsive.css" />
+    <style>
+        /* ── Settings layout ── */
+        .settings-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* ── Left nav panel ── */
+        .settings-nav {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            position: sticky;
+            top: calc(var(--navbar-height) + 20px);
+        }
+
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            cursor: pointer;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            text-decoration: none;
+        }
+
+        .settings-nav-item:hover {
+            background: var(--gray-50);
+        }
+
+        .settings-nav-item.active {
+            background: var(--primary-light);
+            border-left-color: var(--primary);
+        }
+
+        .settings-nav-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: var(--gray-100);
+        }
+
+        .settings-nav-icon .material-symbols-outlined {
+            font-size: 18px;
+            color: var(--gray-500);
+        }
+
+        .settings-nav-item.active .settings-nav-icon {
+            background: var(--primary-light);
+        }
+
+        .settings-nav-item.active .settings-nav-icon .material-symbols-outlined {
+            color: var(--primary);
+        }
+
+        .settings-nav-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .settings-nav-sub {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 1px;
+        }
+
+        .settings-nav-item.active .settings-nav-label {
+            color: var(--primary);
+        }
+
+        /* ── Right content panel ── */
+        .settings-content {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            min-height: 500px;
+        }
+
+        .settings-section {
+            display: none;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        .settings-section-header {
+            padding: 22px 26px 16px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .settings-section-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .settings-section-sub {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 3px;
+        }
+
+        .settings-section-body {
+            padding: 24px 26px;
+        }
+
+        /* ── Form grid ── */
+        .settings-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .settings-save-row {
+            display: flex;
+            justify-content: flex-end;
+            padding: 16px 26px 22px;
+            border-top: 1px solid var(--gray-100);
+            margin-top: 8px;
+        }
+
+        /* ── Category table ── */
+        .cat-tab-bar {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--gray-200);
+            margin-bottom: 20px;
+        }
+
+        .cat-tab {
+            padding: 9px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-500);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: -2px;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+
+        .cat-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .cat-tab:hover {
+            color: var(--gray-700);
+        }
+
+        .cat-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .cat-row-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .cat-row-desc {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 1px;
+        }
+
+        .cat-drag-handle {
+            color: var(--gray-300);
+            cursor: grab;
+            display: flex;
+            align-items: center;
+        }
+
+        .cat-drag-handle .material-symbols-outlined {
+            font-size: 20px;
+        }
+
+        /* ── Toggle switch ── */
+        .toggle-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 42px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: var(--gray-300);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle input:checked~.toggle-track {
+            background: var(--status-resolved);
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            transition: left 0.2s;
+            pointer-events: none;
+        }
+
+        .toggle input:checked~.toggle-thumb {
+            left: 21px;
+        }
+
+        .toggle-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+        }
+
+        /* ── Offices table ── */
+        .office-type-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .office-type-badge.infra {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .office-type-badge.env {
+            background: var(--status-resolved-bg);
+            color: var(--status-resolved);
+        }
+
+        .office-type-badge.gen {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        /* ── Notification table ── */
+        .notif-settings-table th,
+        .notif-settings-table td {
+            padding: 12px 14px;
+            vertical-align: middle;
+        }
+
+        .notif-settings-table th {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--gray-400);
+            text-align: center;
+        }
+
+        .notif-settings-table th:first-child {
+            text-align: left;
+        }
+
+        .notif-settings-table td:last-child {
+            text-align: center;
+        }
+
+        .notif-event-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .notif-event-icon .material-symbols-outlined {
+            font-size: 16px;
+        }
+
+        /* ── Security section ── */
+        .security-group {
+            margin-bottom: 28px;
+        }
+
+        .security-group-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .security-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--gray-50);
+        }
+
+        .security-row:last-child {
+            border-bottom: none;
+        }
+
+        .security-row-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .security-row-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        .security-row-sub {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+
+        .security-select {
+            padding: 6px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--gray-700);
+            background: var(--white);
+            min-width: 140px;
+        }
+
+        /* ── System logs ── */
+        .log-activity-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .log-activity-badge.login {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .log-activity-badge.validate {
+            background: var(--status-pending-bg);
+            color: var(--status-pending);
+        }
+
+        .log-activity-badge.assign {
+            background: var(--status-assigned-bg);
+            color: var(--status-assigned);
+        }
+
+        .log-activity-badge.update {
+            background: var(--status-inprogress-bg);
+            color: var(--status-inprogress);
+        }
+
+        .log-activity-badge.logout {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+        /* ── About section ── */
+        .about-logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .about-logo-icon {
+            width: 68px;
+            height: 68px;
+            border-radius: var(--radius-lg);
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+        }
+
+        .about-logo-icon .material-symbols-outlined {
+            font-size: 36px;
+            color: #fff;
+        }
+
+        .about-system-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--gray-900);
+        }
+
+        .about-system-place {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin-top: 2px;
+        }
+
+        .about-version {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        .about-desc {
+            font-size: 13px;
+            color: var(--gray-600);
+            line-height: 1.7;
+            max-width: 560px;
+            margin-bottom: 24px;
+        }
+
+        .about-credits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .about-credit-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .about-credit-row .material-symbols-outlined {
+            font-size: 17px;
+            color: var(--gray-400);
+            margin-top: 1px;
+            flex-shrink: 0;
+        }
+
+        .about-credit-label {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-bottom: 1px;
+        }
+
+        .about-credit-val {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .about-copyright {
+            font-size: 12px;
+            color: var(--gray-400);
+            padding: 14px 0;
+            border-top: 1px solid var(--gray-100);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .about-copyright .material-symbols-outlined {
+            font-size: 15px;
+        }
+
+        .about-notice {
+            background: var(--primary-light);
+            border: 1px solid var(--status-assigned-border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--primary);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .about-notice .material-symbols-outlined {
+            font-size: 17px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* ── Info tip ── */
+        .settings-tip {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: var(--primary-light);
+            border: 1px solid var(--status-assigned-border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--primary);
+            margin-top: 20px;
+        }
+
+        .settings-tip .material-symbols-outlined {
+            font-size: 17px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* ── Row action icons ── */
+        .row-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .row-icon-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: var(--radius-sm);
+            background: none;
+            border: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .row-icon-btn:hover {
+            background: var(--gray-100);
+        }
+
+        .row-icon-btn .material-symbols-outlined {
+            font-size: 16px;
+        }
+
+        .row-icon-btn.edit {
+            color: var(--gray-500);
+        }
+
+        .row-icon-btn.delete {
+            color: #EF4444;
+            border-color: #FECACA;
+        }
+
+        .row-icon-btn.delete:hover {
+            background: #FEE2E2;
+        }
+
+        /* Dark mode */
+        [data-theme="dark"] .settings-nav {
+            background: #1E2330;
+            border-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .settings-nav-item:hover {
+            background: var(--gray-100);
+        }
+
+        [data-theme="dark"] .settings-nav-item.active {
+            background: rgba(77, 142, 255, 0.12);
+            border-left-color: var(--primary);
+        }
+
+        [data-theme="dark"] .settings-nav-icon {
+            background: var(--gray-200);
+        }
+
+        [data-theme="dark"] .settings-nav-item.active .settings-nav-icon {
+            background: rgba(77, 142, 255, 0.15);
+        }
+
+        [data-theme="dark"] .settings-nav-label {
+            color: var(--gray-700);
+        }
+
+        [data-theme="dark"] .settings-nav-item.active .settings-nav-label {
+            color: var(--primary);
+        }
+
+        [data-theme="dark"] .settings-content {
+            background: #1E2330;
+            border-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .settings-section-header {
+            border-bottom-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .settings-section-title {
+            color: var(--gray-900);
+        }
+
+        [data-theme="dark"] .settings-save-row {
+            border-top-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .cat-tab-bar {
+            border-bottom-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .cat-row-name {
+            color: var(--gray-800);
+        }
+
+        [data-theme="dark"] .security-group-title {
+            color: var(--gray-700);
+            border-bottom-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .security-row {
+            border-bottom-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .security-row-label {
+            color: var(--gray-700);
+        }
+
+        [data-theme="dark"] .security-select {
+            background: var(--gray-100);
+            border-color: var(--gray-200);
+            color: var(--gray-800);
+        }
+
+        [data-theme="dark"] .toggle-track {
+            background: var(--gray-300);
+        }
+
+        [data-theme="dark"] .about-system-name {
+            color: var(--gray-900);
+        }
+
+        [data-theme="dark"] .about-copyright {
+            border-top-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .about-notice {
+            background: rgba(77, 142, 255, 0.1);
+            border-color: rgba(77, 142, 255, 0.25);
+        }
+
+        [data-theme="dark"] .settings-tip {
+            background: rgba(77, 142, 255, 0.1);
+            border-color: rgba(77, 142, 255, 0.25);
+        }
+
+        [data-theme="dark"] .row-icon-btn {
+            border-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .row-icon-btn:hover {
+            background: var(--gray-100);
+        }
+
+        [data-theme="dark"] .office-type-badge.gen {
+            background: var(--gray-200);
+            color: var(--gray-600);
+        }
+    </style>
+</head>
+
+<body data-page="settings">
+    <div class="app-wrapper">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-area" id="mainArea">
+            <nav class="navbar" id="navbar"></nav>
+            <main class="page-content">
+
+                <!-- Header -->
+                <div class="page-header">
+                    <h1 class="page-title">Settings</h1>
+                    <p class="page-subtitle">Configure system preferences and manage platform settings.</p>
+                </div>
+
+                <div class="settings-layout">
+
+                    <!-- ── Left Nav ── -->
+                    <nav class="settings-nav">
+                        <div class="settings-nav-item active" onclick="switchSection('general', this)">
+                            <div class="settings-nav-icon"><span class="material-symbols-outlined">settings</span></div>
+                            <div>
+                                <div class="settings-nav-label">General</div>
+                                <div class="settings-nav-sub">Basic system information</div>
+                            </div>
+                        </div>
+                        <div class="settings-nav-item" onclick="switchSection('categories', this)">
+                            <div class="settings-nav-icon"><span class="material-symbols-outlined">category</span></div>
+                            <div>
+                                <div class="settings-nav-label">Report Categories</div>
+                                <div class="settings-nav-sub">Manage report categories</div>
+                            </div>
+                        </div>
+                        <div class="settings-nav-item" onclick="switchSection('offices', this)">
+                            <div class="settings-nav-icon"><span class="material-symbols-outlined">business</span></div>
+                            <div>
+                                <div class="settings-nav-label">Government Offices</div>
+                                <div class="settings-nav-sub">Manage offices and departments</div>
+                            </div>
+                        </div>
+                        <div class="settings-nav-item" onclick="switchSection('notifications', this)">
+                            <div class="settings-nav-icon"><span class="material-symbols-outlined">notifications</span></div>
+                            <div>
+                                <div class="settings-nav-label">Notification Settings</div>
+                                <div class="settings-nav-sub">Configure notification preferences</div>
+                            </div>
+                        </div>
+                        <div class="settings-nav-item" onclick="switchSection('security', this)">
+                            <div class="settings-nav-icon"><span class="material-symbols-outlined">shield</span></div>
+                            <div>
+                                <div class="settings-nav-label">Security</div>
+                                <div class="settings-nav-sub">Security and access control</div>
+                            </div>
+                        </div>
+                        <div class="settings-nav-item" onclick="switchSection('logs', this)">
+                            <div class="settings-nav-icon"><span class="material-symbols-outlined">receipt_long</span></div>
+                            <div>
+                                <div class="settings-nav-label">System Logs</div>
+                                <div class="settings-nav-sub">View system activity logs</div>
+                            </div>
+                        </div>
+                        <div class="settings-nav-item" onclick="switchSection('about', this)">
+                            <div class="settings-nav-icon"><span class="material-symbols-outlined">info</span></div>
+                            <div>
+                                <div class="settings-nav-label">About System</div>
+                                <div class="settings-nav-sub">System information and credits</div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- ── Right Content ── -->
+                    <div class="settings-content">
+
+                        <!-- ══ 1. GENERAL ══ -->
+                        <div class="settings-section active" id="section-general">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">General</div>
+                                <div class="settings-section-sub">Basic system information</div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="settings-form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">System Name</label>
+                                        <input type="text" class="form-input" value="CIVILWATCH" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Date Format</label>
+                                        <select class="form-select">
+                                            <option selected>May 21, 2026 (MMM DD, YYYY)</option>
+                                            <option>05/21/2026 (MM/DD/YYYY)</option>
+                                            <option>21/05/2026 (DD/MM/YYYY)</option>
+                                            <option>2026-05-21 (YYYY-MM-DD)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">City</label>
+                                        <input type="text" class="form-input" value="Digos City" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Time Format</label>
+                                        <select class="form-select">
+                                            <option selected>12-Hour (AM/PM)</option>
+                                            <option>24-Hour</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Language</label>
+                                        <select class="form-select">
+                                            <option selected>English</option>
+                                            <option>Filipino</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Default Map View</label>
+                                        <select class="form-select">
+                                            <option selected>Map</option>
+                                            <option>Satellite</option>
+                                            <option>Hybrid</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="settings-save-row">
+                                <button class="btn btn-primary" onclick="Utils.showToast('General settings saved','success')">
+                                    <span class="material-symbols-outlined">save</span> Save Changes
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ══ 2. REPORT CATEGORIES ══ -->
+                        <div class="settings-section" id="section-categories">
+                            <div class="settings-section-header" style="display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <div class="settings-section-title">Report Categories</div>
+                                    <div class="settings-section-sub">Manage infrastructure and environmental incident categories. Changes apply to all users.</div>
+                                </div>
+                                <button class="btn btn-primary" onclick="Utils.showToast('Add category feature coming soon','info')">
+                                    <span class="material-symbols-outlined">add</span> Add Category
+                                </button>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="cat-tab-bar">
+                                    <button class="cat-tab active" onclick="switchCatTab('infra', this)">Infrastructure</button>
+                                    <button class="cat-tab" onclick="switchCatTab('env', this)">Environmental</button>
+                                </div>
+                                <!-- Infrastructure categories -->
+                                <div id="cat-infra">
+                                    <div class="table-container" style="border:none;padding:0;">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:32px;"></th>
+                                                    <th>CATEGORY</th>
+                                                    <th>DESCRIPTION</th>
+                                                    <th>STATUS</th>
+                                                    <th>ACTIONS</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="infraCatBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <!-- Environmental categories -->
+                                <div id="cat-env" style="display:none;">
+                                    <div class="table-container" style="border:none;padding:0;">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:32px;"></th>
+                                                    <th>CATEGORY</th>
+                                                    <th>DESCRIPTION</th>
+                                                    <th>STATUS</th>
+                                                    <th>ACTIONS</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="envCatBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="settings-tip">
+                                    <span class="material-symbols-outlined">info</span>
+                                    Changes made here will be visible to all users when submitting a report.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ 3. GOVERNMENT OFFICES ══ -->
+                        <div class="settings-section" id="section-offices">
+                            <div class="settings-section-header" style="display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <div class="settings-section-title">Government Offices</div>
+                                    <div class="settings-section-sub">Manage government offices and departments that can be assigned reports.</div>
+                                </div>
+                                <button class="btn btn-primary" onclick="Utils.showToast('Add office feature coming soon','info')">
+                                    <span class="material-symbols-outlined">add</span> Add Office
+                                </button>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="table-container" style="border:none;padding:0;">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>OFFICE NAME</th>
+                                                <th>CODE</th>
+                                                <th>TYPE</th>
+                                                <th>STATUS</th>
+                                                <th>ACTIONS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="officesBody"></tbody>
+                                    </table>
+                                </div>
+                                <div class="settings-tip">
+                                    <span class="material-symbols-outlined">info</span>
+                                    Only active offices will appear in the assignment list.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ 4. NOTIFICATION SETTINGS ══ -->
+                        <div class="settings-section" id="section-notifications">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">Notification Settings</div>
+                                <div class="settings-section-sub">Configure which events will trigger notifications in the system.</div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="table-container" style="border:none;padding:0;">
+                                    <table class="data-table notif-settings-table">
+                                        <thead>
+                                            <tr>
+                                                <th>NOTIFICATION EVENT</th>
+                                                <th style="text-align:center">ACTIVE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="notifSettingsBody"></tbody>
+                                    </table>
+                                </div>
+                                <div class="settings-tip">
+                                    <span class="material-symbols-outlined">info</span>
+                                    These notification preferences apply to all users based on their role and assigned office.
+                                </div>
+                            </div>
+                            <div class="settings-save-row">
+                                <button class="btn btn-primary" onclick="Utils.showToast('Notification settings saved','success')">
+                                    <span class="material-symbols-outlined">save</span> Save Changes
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ══ 5. SECURITY ══ -->
+                        <div class="settings-section" id="section-security">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">Security</div>
+                                <div class="settings-section-sub">Manage security preferences and access control.</div>
+                            </div>
+                            <div class="settings-section-body">
+
+                                <!-- Password Policy -->
+                                <div class="security-group">
+                                    <div class="security-group-title">Password Policy</div>
+                                    <div class="security-row">
+                                        <div class="security-row-left">
+                                            <div class="security-row-label">Minimum password length</div>
+                                            <div class="security-row-sub">Set the minimum number of characters.</div>
+                                        </div>
+                                        <select class="security-select">
+                                            <option>6 characters</option>
+                                            <option selected>8 characters</option>
+                                            <option>10 characters</option>
+                                            <option>12 characters</option>
+                                        </select>
+                                    </div>
+                                    <div class="security-row">
+                                        <div class="security-row-left">
+                                            <div class="security-row-label">Require uppercase letters</div>
+                                            <div class="security-row-sub">Password must contain at least one uppercase letter.</div>
+                                        </div>
+                                        <label class="toggle">
+                                            <input type="checkbox" checked />
+                                            <div class="toggle-track"></div>
+                                            <div class="toggle-thumb"></div>
+                                        </label>
+                                    </div>
+                                    <div class="security-row">
+                                        <div class="security-row-left">
+                                            <div class="security-row-label">Require numbers</div>
+                                            <div class="security-row-sub">Password must contain at least one number.</div>
+                                        </div>
+                                        <label class="toggle">
+                                            <input type="checkbox" checked />
+                                            <div class="toggle-track"></div>
+                                            <div class="toggle-thumb"></div>
+                                        </label>
+                                    </div>
+                                    <div class="security-row">
+                                        <div class="security-row-left">
+                                            <div class="security-row-label">Require special characters</div>
+                                            <div class="security-row-sub">Password must contain at least one special character.</div>
+                                        </div>
+                                        <label class="toggle">
+                                            <input type="checkbox" />
+                                            <div class="toggle-track"></div>
+                                            <div class="toggle-thumb"></div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Session Settings -->
+                                <div class="security-group">
+                                    <div class="security-group-title">Session Settings</div>
+                                    <div class="security-row">
+                                        <div class="security-row-left">
+                                            <div class="security-row-label">Automatic logout (Inactivity)</div>
+                                            <div class="security-row-sub">Automatically log out user after a period of inactivity.</div>
+                                        </div>
+                                        <select class="security-select">
+                                            <option>15 minutes</option>
+                                            <option>20 minutes</option>
+                                            <option selected>30 minutes</option>
+                                            <option>1 hour</option>
+                                            <option>Never</option>
+                                        </select>
+                                    </div>
+                                    <div class="security-row">
+                                        <div class="security-row-left">
+                                            <div class="security-row-label">Remember Me</div>
+                                            <div class="security-row-sub">Allow users to stay logged in on this device.</div>
+                                        </div>
+                                        <label class="toggle">
+                                            <input type="checkbox" checked />
+                                            <div class="toggle-track"></div>
+                                            <div class="toggle-thumb"></div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Access Control -->
+                                <div class="security-group">
+                                    <div class="security-group-title">Access Control</div>
+                                    <div class="security-row">
+                                        <div class="security-row-left">
+                                            <div class="security-row-label">Two-Factor Authentication (2FA)</div>
+                                            <div class="security-row-sub">Require 2FA for all administrators.</div>
+                                        </div>
+                                        <label class="toggle">
+                                            <input type="checkbox" />
+                                            <div class="toggle-track"></div>
+                                            <div class="toggle-thumb"></div>
+                                        </label>
+                                    </div>
+                                    <div class="security-row">
+                                        <div class="security-row-left">
+                                            <div class="security-row-label">Restrict login to assigned office</div>
+                                            <div class="security-row-sub">Users can only access data from their assigned office.</div>
+                                        </div>
+                                        <label class="toggle">
+                                            <input type="checkbox" checked />
+                                            <div class="toggle-track"></div>
+                                            <div class="toggle-thumb"></div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="settings-tip">
+                                    <span class="material-symbols-outlined">info</span>
+                                    Security settings help protect the system and user data.
+                                </div>
+                            </div>
+                            <div class="settings-save-row">
+                                <button class="btn btn-primary" onclick="Utils.showToast('Security settings saved','success')">
+                                    <span class="material-symbols-outlined">save</span> Save Changes
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ══ 6. SYSTEM LOGS ══ -->
+                        <div class="settings-section" id="section-logs">
+                            <div class="settings-section-header" style="display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <div class="settings-section-title">System Logs</div>
+                                    <div class="settings-section-sub">View and monitor system activity logs.</div>
+                                </div>
+                                <button class="btn btn-secondary" onclick="Utils.showToast('Exporting logs...','info')" style="gap:6px;">
+                                    <span class="material-symbols-outlined">file_download</span> Export Logs
+                                </button>
+                            </div>
+                            <div class="settings-section-body">
+                                <!-- Log Toolbar -->
+                                <div class="table-toolbar" style="margin-bottom:14px;">
+                                    <div class="search-input-wrap">
+                                        <span class="material-symbols-outlined">search</span>
+                                        <input type="text" class="search-input" id="logSearch" placeholder="Search logs..." />
+                                    </div>
+                                    <select class="filter-select" id="logActivityFilter">
+                                        <option value="">All Activities</option>
+                                        <option value="login">User Login</option>
+                                        <option value="logout">User Logout</option>
+                                        <option value="validate">Validated Report</option>
+                                        <option value="assign">Assigned Report</option>
+                                        <option value="update">Status Updated</option>
+                                    </select>
+                                    <select class="filter-select" id="logUserFilter">
+                                        <option value="">All Users</option>
+                                        <option>Maria Santos</option>
+                                        <option>Juan Dela Cruz</option>
+                                        <option>Ana Reyes</option>
+                                    </select>
+                                </div>
+                                <div class="table-container" style="border:none;padding:0;">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>DATE &amp; TIME</th>
+                                                <th>USER</th>
+                                                <th>ROLE</th>
+                                                <th>ACTIVITY</th>
+                                                <th>DETAILS</th>
+                                                <th>IP ADDRESS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="logsBody"></tbody>
+                                    </table>
+                                </div>
+                                <div class="table-footer">
+                                    <span class="table-showing">Showing 1 to 6 of 345 logs</span>
+                                    <div style="display:flex;align-items:center;gap:12px;">
+                                        <div class="pagination">
+                                            <button class="page-btn"><span class="material-symbols-outlined">chevron_left</span></button>
+                                            <button class="page-btn active">1</button>
+                                            <button class="page-btn">2</button>
+                                            <button class="page-btn">3</button>
+                                            <span style="font-size:12px;color:var(--gray-400)">...</span>
+                                            <button class="page-btn">41</button>
+                                            <button class="page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+                                        </div>
+                                        <select class="per-page-select">
+                                            <option>10 / page</option>
+                                            <option>25 / page</option>
+                                            <option>50 / page</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ 7. ABOUT SYSTEM ══ -->
+                        <div class="settings-section" id="section-about">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">About System</div>
+                                <div class="settings-section-sub">System information and credits.</div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="about-logo-wrap">
+                                    <div class="about-logo-icon">
+                                        <span class="material-symbols-outlined">shield</span>
+                                    </div>
+                                    <div>
+                                        <div class="about-system-name">CIVILWATCH</div>
+                                        <div class="about-system-place">Digos City</div>
+                                        <div class="about-version">
+                                            <span class="material-symbols-outlined" style="font-size:13px">verified</span>
+                                            Version 1.0.0
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="about-desc">
+                                    A Geotagged Community Infrastructure and Environmental Incident Reporting, Management, and
+                                    Monitoring System for Digos City.
+                                </p>
+                                <div class="about-credits-grid">
+                                    <div class="about-credit-row">
+                                        <span class="material-symbols-outlined">person</span>
+                                        <div>
+                                            <div class="about-credit-label">Developed By</div>
+                                            <div class="about-credit-val">Renz Justine Y. Borinaga</div>
+                                            <div class="about-credit-val">Jhon Carlo Mag-Usara</div>
+                                            <div class="about-credit-val">Lawrence Roy P. Sereno</div>
+                                        </div>
+                                    </div>
+                                    <div class="about-credit-row">
+                                        <span class="material-symbols-outlined">school</span>
+                                        <div>
+                                            <div class="about-credit-label">Adviser</div>
+                                            <div class="about-credit-val">Cyvil Dave T. Dasargo, MIT</div>
+                                        </div>
+                                    </div>
+                                    <div class="about-credit-row">
+                                        <span class="material-symbols-outlined">account_balance</span>
+                                        <div>
+                                            <div class="about-credit-label">College</div>
+                                            <div class="about-credit-val">UM Digos College</div>
+                                        </div>
+                                    </div>
+                                    <div class="about-credit-row">
+                                        <span class="material-symbols-outlined">computer</span>
+                                        <div>
+                                            <div class="about-credit-label">Department</div>
+                                            <div class="about-credit-val">Information Technology</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="about-copyright">
+                                    <span class="material-symbols-outlined">copyright</span>
+                                    © 2026 CIVILWATCH. All rights reserved.
+                                </div>
+                                <div class="about-notice">
+                                    <span class="material-symbols-outlined">info</span>
+                                    This system is developed for academic purposes only.
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- end settings-content -->
+                </div><!-- end settings-layout -->
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        // ── Section switching ────────────────────────────────────────
+        function switchSection(id, el) {
+            document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('section-' + id).classList.add('active');
+            el.classList.add('active');
+        }
+
+        // ── Category tab switching ───────────────────────────────────
+        function switchCatTab(tab, el) {
+            document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('cat-infra').style.display = tab === 'infra' ? '' : 'none';
+            document.getElementById('cat-env').style.display = tab === 'env' ? '' : 'none';
+        }
+
+        // ── Category data ────────────────────────────────────────────
+        const CAT_ICONS = {
+            'Road Repair': {
+                emoji: '🚧',
+                bg: '#FEF3C7',
+                color: '#D97706'
+            },
+            'Road Graveling': {
+                emoji: '🪨',
+                bg: '#F3F4F6',
+                color: '#6B7280'
+            },
+            'Streetlight / Light Pole Concern': {
+                emoji: '�',
+                bg: '#FEF9C3',
+                color: '#CA8A04'
+            },
+            'Blocked Canal': {
+                emoji: '🌊',
+                bg: '#DBEAFE',
+                color: '#2563EB'
+            },
+            'Others': {
+                emoji: '�',
+                bg: '#F3F4F6',
+                color: '#6B7280'
+            },
+            'Illegal Dumping': {
+                emoji: '🗑️',
+                bg: '#FEF2F2',
+                color: '#EF4444'
+            },
+            'Garbage Collection': {
+                emoji: '♻️',
+                bg: '#D1FAE5',
+                color: '#059669'
+            },
+        };
+
+        const infraCategories = [{
+                name: 'Road Repair',
+                desc: 'Road needs repair, patching, compaction, shouldering, or surface work. Citizen describes specifics.'
+            },
+            {
+                name: 'Road Graveling',
+                desc: 'Gravel road needs re-graveling or new gravel application.'
+            },
+            {
+                name: 'Streetlight / Light Pole Concern',
+                desc: 'Streetlight or light pole needs repair, replacement, or is a new installation request. Citizen describes specifics.'
+            },
+            {
+                name: 'Blocked Canal',
+                desc: 'Canal is clogged or blocked, causing drainage or flooding issues.'
+            },
+            {
+                name: 'Others',
+                desc: 'Other infrastructure concerns not covered by the categories above.'
+            },
+        ];
+
+        const envCategories = [{
+                name: 'Illegal Dumping',
+                desc: 'Large amount of garbage illegally dumped in an unauthorized public or private space.'
+            },
+            {
+                name: 'Garbage Collection',
+                desc: 'Garbage collection request or missed scheduled pickup in the area.'
+            },
+        ];
+
+        function renderCatRow(c) {
+            const ic = CAT_ICONS[c.name] || {
+                emoji: '📌',
+                bg: '#F3F4F6',
+                color: '#6B7280'
+            };
+            return `
+    <tr>
+      <td><div class="cat-drag-handle"><span class="material-symbols-outlined">drag_indicator</span></div></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="cat-icon" style="background:${ic.bg};color:${ic.color};font-size:18px;">${ic.emoji}</div>
+          <div>
+            <div class="cat-row-name">${c.name}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="cat-row-desc">${c.desc}</span></td>
+      <td>
+        <div class="toggle-wrap">
+          <label class="toggle">
+            <input type="checkbox" checked />
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+          <span class="toggle-label">Active</span>
+        </div>
+      </td>
+      <td>
+        <div class="row-actions">
+          <button class="row-icon-btn edit" title="Edit" onclick="Utils.showToast('Edit category coming soon','info')">
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+          <button class="row-icon-btn delete" title="Delete" onclick="Utils.showToast('Delete category coming soon','error')">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `;
+        }
+
+        document.getElementById('infraCatBody').innerHTML = infraCategories.map(renderCatRow).join('');
+        document.getElementById('envCatBody').innerHTML = envCategories.map(renderCatRow).join('');
+
+        // ── Offices data ─────────────────────────────────────────────
+        const officesData = [{
+                name: 'City Engineering Office',
+                code: 'CEO',
+                type: 'Infrastructure',
+                status: true
+            },
+            {
+                name: 'City Environment and Natural Resources Office',
+                code: 'CENRO',
+                type: 'Environmental',
+                status: true
+            },
+            {
+                name: 'TAPIK Digos – Public Assistance and Complaints Desk',
+                code: 'TAPIK',
+                type: 'General',
+                status: true
+            },
+        ];
+
+        function officeTypeBadge(type) {
+            const cls = type === 'Infrastructure' ? 'infra' : type === 'Environmental' ? 'env' : 'gen';
+            return `<span class="office-type-badge ${cls}">${type}</span>`;
+        }
+
+        document.getElementById('officesBody').innerHTML = officesData.map(o => `
+  <tr>
+    <td>
+      <div style="font-size:13px;font-weight:600;color:var(--gray-800)">${o.name}</div>
+    </td>
+    <td><span class="ref-id">${o.code}</span></td>
+    <td>${officeTypeBadge(o.type)}</td>
+    <td>
+      <div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" ${o.status ? 'checked' : ''} />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+        <span class="toggle-label">${o.status ? 'Active' : 'Inactive'}</span>
+      </div>
+    </td>
+    <td>
+      <div class="row-actions">
+        <button class="row-icon-btn edit" onclick="Utils.showToast('Edit office coming soon','info')">
+          <span class="material-symbols-outlined">edit</span>
+        </button>
+        <button class="row-icon-btn delete" onclick="Utils.showToast('Delete office coming soon','error')">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </div>
+    </td>
+  </tr>
+`).join('');
+
+        // ── Notification settings data ───────────────────────────────
+        const notifEvents = [{
+                icon: 'description',
+                cls: 'bg:#EEF3FF;color:#1A56DB',
+                label: 'Report Submitted',
+                desc: 'When a new report is submitted by a user',
+                sys: true,
+                email: true,
+                sms: false,
+                active: true
+            },
+            {
+                icon: 'verified',
+                cls: 'bg:#FFFBEB;color:#D97706',
+                label: 'Report Validated',
+                desc: 'When a report is approved or rejected',
+                sys: true,
+                email: true,
+                sms: false,
+                active: true
+            },
+            {
+                icon: 'assignment_ind',
+                cls: 'bg:#EEF3FF;color:#1A56DB',
+                label: 'Report Assigned',
+                desc: 'When a report is assigned to an office',
+                sys: true,
+                email: true,
+                sms: true,
+                active: true
+            },
+            {
+                icon: 'autorenew',
+                cls: 'bg:#FFF7ED;color:#F97316',
+                label: 'Status Updated',
+                desc: 'When the status of a report is changed',
+                sys: true,
+                email: false,
+                sms: false,
+                active: true
+            },
+            {
+                icon: 'task_alt',
+                cls: 'bg:#ECFDF5;color:#10B981',
+                label: 'Report Resolved',
+                desc: 'When a report is marked as resolved',
+                sys: true,
+                email: true,
+                sms: false,
+                active: true
+            },
+            {
+                icon: 'campaign',
+                cls: 'bg:#F3E8FF;color:#7C3AED',
+                label: 'System Announcements',
+                desc: 'General system-wide announcements and alerts',
+                sys: true,
+                email: false,
+                sms: false,
+                active: false
+            },
+        ];
+
+        function toggle(checked) {
+            return `
+    <label class="toggle" style="margin:auto;">
+      <input type="checkbox" ${checked ? 'checked' : ''} />
+      <div class="toggle-track"></div>
+      <div class="toggle-thumb"></div>
+    </label>
+  `;
+        }
+
+        function statusPill(active) {
+            return `
+    <div class="toggle-wrap" style="justify-content:center;">
+      <label class="toggle">
+        <input type="checkbox" ${active ? 'checked' : ''} />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+      <span class="toggle-label">${active ? 'On' : 'Off'}</span>
+    </div>
+  `;
+        }
+
+        document.getElementById('notifSettingsBody').innerHTML = notifEvents.map(n => {
+            const [bg, col] = n.cls.replace('bg:', '').split(';color:');
+            return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="notif-event-icon" style="background:${bg};">
+            <span class="material-symbols-outlined" style="color:${col};font-size:17px;">${n.icon}</span>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800)">${n.label}</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:1px">${n.desc}</div>
+          </div>
+        </div>
+      </td>
+      <td style="text-align:center">${statusPill(n.active)}</td>
+    </tr>
+  `;
+        }).join('');
+
+        // ── System Logs data ─────────────────────────────────────────
+        const logsData = [{
+                date: 'May 21, 2026',
+                time: '10:42 AM',
+                user: 'Maria Santos',
+                role: 'Super Admin',
+                activity: 'login',
+                details: 'Logged in to the system',
+                ip: '192.168.1.10'
+            },
+            {
+                date: 'May 21, 2026',
+                time: '10:45 AM',
+                user: 'Maria Santos',
+                role: 'Super Admin',
+                activity: 'validate',
+                details: 'Validated Report #CW-2026-032b',
+                ip: '192.168.1.10'
+            },
+            {
+                date: 'May 21, 2026',
+                time: '10:48 AM',
+                user: 'Maria Santos',
+                role: 'Super Admin',
+                activity: 'assign',
+                details: 'Assigned Report #CW-2026-032b to CEO',
+                ip: '192.168.1.10'
+            },
+            {
+                date: 'May 21, 2026',
+                time: '10:52 AM',
+                user: 'Juan Dela Cruz',
+                role: 'CEO Admin',
+                activity: 'update',
+                details: 'Report #CW-2026-028b status → In Progress',
+                ip: '192.168.1.29'
+            },
+            {
+                date: 'May 21, 2026',
+                time: '11:10 AM',
+                user: 'Juan Dela Cruz',
+                role: 'CEO Admin',
+                activity: 'update',
+                details: 'Report #CW-2026-026b status → Resolved',
+                ip: '192.168.1.29'
+            },
+            {
+                date: 'May 21, 2026',
+                time: '11:20 AM',
+                user: 'Maria Santos',
+                role: 'Super Admin',
+                activity: 'logout',
+                details: 'Logged out from the system',
+                ip: '192.168.1.10'
+            },
+        ];
+
+        const actBadge = {
+            login: 'login',
+            logout: 'logout',
+            validate: 'validate',
+            assign: 'assign',
+            update: 'update'
+        };
+        const actLabel = {
+            login: 'User Login',
+            logout: 'User Logout',
+            validate: 'Validated Report',
+            assign: 'Assigned Report',
+            update: 'Status Updated'
+        };
+
+        let filteredLogs = [...logsData];
+
+        function renderLogs() {
+            document.getElementById('logsBody').innerHTML = filteredLogs.map(l => `
+    <tr>
+      <td>
+        <div style="font-size:13px;color:var(--gray-700)">${l.date}</div>
+        <div style="font-size:11px;color:var(--gray-400)">${l.time}</div>
+      </td>
+      <td style="font-size:13px;font-weight:600;color:var(--gray-800)">${l.user}</td>
+      <td style="font-size:12px;color:var(--gray-500)">${l.role}</td>
+      <td><span class="log-activity-badge ${actBadge[l.activity]}">${actLabel[l.activity]}</span></td>
+      <td style="font-size:12px;color:var(--gray-600);max-width:200px;">${l.details}</td>
+      <td style="font-size:12px;color:var(--gray-500);font-family:monospace">${l.ip}</td>
+    </tr>
+  `).join('') || `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400)">No logs found</td></tr>`;
+        }
+
+        const filterLogs = Utils.debounce(() => {
+            const q = document.getElementById('logSearch').value.toLowerCase();
+            const act = document.getElementById('logActivityFilter').value;
+            const usr = document.getElementById('logUserFilter').value;
+            filteredLogs = logsData.filter(l =>
+                (!q || l.user.toLowerCase().includes(q) || l.details.toLowerCase().includes(q)) &&
+                (!act || l.activity === act) &&
+                (!usr || l.user === usr)
+            );
+            renderLogs();
+        }, 250);
+
+        document.getElementById('logSearch').addEventListener('input', filterLogs);
+        document.getElementById('logActivityFilter').addEventListener('change', filterLogs);
+        document.getElementById('logUserFilter').addEventListener('change', filterLogs);
+
+        renderLogs();
+    </script>
+</body>
+
+</html>

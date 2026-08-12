@@ -1,0 +1,35 @@
+{
+  "summary": {
+    "totalReports": 206,
+    "pendingValidation": 24,
+    "assigned": 36,
+    "inProgress": 18,
+    "resolved": 128
+  },
+  "weeklyTrend": {
+    "labels": ["Apr 20-26", "Apr 27-May 3", "May 4-10", "May 11-17", "May 18-21"],
+    "data": [23, 34, 48, 37, 26]
+  },
+  "monthlyTrend": {
+    "labels": ["Jan", "Feb", "Mar", "Apr", "May"],
+    "data": [28, 35, 42, 55, 46]
+  },
+  "topIssues": {
+    "labels": ["Damaged Road", "Blocked Drainage", "Broken Streetlight", "Illegal Dumping", "Overgrown Vegetation"],
+    "data": [68, 42, 31, 27, 21]
+  },
+  "byCategory": {
+    "labels": ["Infrastructure", "Environmental"],
+    "data": [124, 82],
+    "percentages": ["60.2%", "39.8%"]
+  },
+  "topBarangays": {
+    "labels": ["Magsaysay", "Aplaya", "Zone II", "Carmen", "Badiang"],
+    "data": [46, 38, 29, 24, 18]
+  },
+  "statusDistribution": {
+    "labels": ["Pending Validation", "Assigned", "In Progress", "Resolved"],
+    "data": [24, 36, 18, 128],
+    "percentages": ["11.7%", "17.5%", "8.7%", "62.1%"]
+  }
+}

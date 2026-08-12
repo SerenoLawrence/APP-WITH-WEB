@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+  (function(){
+    var role = localStorage.getItem('cw_role');
+    if (!role) { window.location.replace('../../index.html'); }
+    else if (role !== 'cenro') {
+      window.location.replace(role === 'super_admin' ? '../../dashboard.html' : '../ceo/dashboard.html');
+    }
+  })();
+</script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resolved Reports — CENRO</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="/css/variables.css" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/navbar.css" />
+  <link rel="stylesheet" href="/css/cards.css" />
+  <link rel="stylesheet" href="/css/buttons.css" />
+  <link rel="stylesheet" href="/css/tables.css" />
+  <link rel="stylesheet" href="/css/badges.css" />
+  <link rel="stylesheet" href="/css/responsive.css" />
+  <style>
+    .table-photo { width:48px; height:38px; border-radius:var(--radius-sm); object-fit:cover; background:var(--gray-100); flex-shrink:0; }
+    .resolved-badge { display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:#ECFDF5;color:#10B981; }
+  </style>
+</head>
+<body data-page="resolved">
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-area" id="mainArea">
+    <nav class="navbar" id="navbar"></nav>
+    <main class="page-content">
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Resolved Reports</h1>
+          <p class="page-subtitle">Environmental reports that have been completed by CENRO.</p>
+        </div>
+      </div>
+
+      <!-- Summary cards -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px;">
+        <div class="card card-padded" style="display:flex;align-items:center;gap:16px;">
+          <div style="width:48px;height:48px;border-radius:var(--radius-full);background:#ECFDF5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span class="material-symbols-outlined" style="font-size:24px;color:#10B981;">task_alt</span>
+          </div>
+          <div>
+            <div style="font-size:26px;font-weight:700;color:var(--gray-900);">35</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-600);">Resolved This Week</div>
+          </div>
+        </div>
+        <div class="card card-padded" style="display:flex;align-items:center;gap:16px;">
+          <div style="width:48px;height:48px;border-radius:var(--radius-full);background:#ECFDF5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span class="material-symbols-outlined" style="font-size:24px;color:#059669;">eco</span>
+          </div>
+          <div>
+            <div style="font-size:26px;font-weight:700;color:var(--gray-900);">142</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-600);">Total Resolved</div>
+          </div>
+        </div>
+        <div class="card card-padded" style="display:flex;align-items:center;gap:16px;">
+          <div style="width:48px;height:48px;border-radius:var(--radius-full);background:#FFFBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span class="material-symbols-outlined" style="font-size:24px;color:#F59E0B;">avg_time</span>
+          </div>
+          <div>
+            <div style="font-size:26px;font-weight:700;color:var(--gray-900);">2.8</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-600);">Avg. Days to Resolve</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-toolbar">
+        <div class="search-input-wrap">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search resolved reports..." />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-container" style="border:none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>PHOTO</th>
+                <th>REFERENCE NO.</th>
+                <th>ISSUE</th>
+                <th>BARANGAY</th>
+                <th>DATE ASSIGNED</th>
+                <th>DATE RESOLVED</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="resolvedBody"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span class="table-showing" id="showingLabel">Showing results</span>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/app.js"></script>
+<script>
+const resolvedData = [
+  { ref:'CW-2026-00105', issue:'Illegal Dumping',     barangay:'Soong',    dateAssigned:'May 18, 2026', dateResolved:'May 21, 2026', photo:'illegal-dumping' },
+  { ref:'CW-2026-00098', issue:'Blocked Canal',        barangay:'Badiang',  dateAssigned:'May 18, 2026', dateResolved:'May 20, 2026', photo:'blocked-drainage' },
+  { ref:'CW-2026-00090', issue:'Overgrown Vegetation', barangay:'Carmen',   dateAssigned:'May 16, 2026', dateResolved:'May 18, 2026', photo:'overgrown' },
+  { ref:'CW-2026-00085', issue:'Illegal Dumping',      barangay:'Aplaya',   dateAssigned:'May 15, 2026', dateResolved:'May 17, 2026', photo:'illegal-dumping' },
+  { ref:'CW-2026-00078', issue:'Soil Erosion',         barangay:'Goma',     dateAssigned:'May 14, 2026', dateResolved:'May 16, 2026', photo:'soil-erosion' },
+  { ref:'CW-2026-00072', issue:'Blocked Canal',        barangay:'Magsaysay',dateAssigned:'May 12, 2026', dateResolved:'May 14, 2026', photo:'blocked-drainage' },
+];
+
+let filtered = [...resolvedData];
+
+function render() {
+  const tbody = document.getElementById('resolvedBody');
+  tbody.innerHTML = filtered.length ? filtered.map(r => `
+    <tr>
+      <td><img class="table-photo" src="${getPhotoUrl(r.issue)}" onerror="this.style.background='var(--gray-200)';this.removeAttribute('src')" alt="${r.issue}" /></td>
+      <td><span class="ref-id">${r.ref}</span></td>
+      <td style="font-size:13px;font-weight:600;color:var(--gray-800);">${r.issue}</td>
+      <td style="font-size:13px;color:var(--gray-600);">${r.barangay}</td>
+      <td style="font-size:12px;color:var(--gray-500);">${r.dateAssigned}</td>
+      <td style="font-size:12px;color:var(--gray-500);">${r.dateResolved}</td>
+      <td><span class="resolved-badge"><span class="material-symbols-outlined" style="font-size:13px;">check_circle</span>Resolved</span></td>
+    </tr>
+  `).join('') : `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400);">No resolved reports found.</td></tr>`;
+  document.getElementById('showingLabel').textContent = `Showing ${filtered.length} of ${resolvedData.length} reports`;
+}
+
+const doFilter = Utils.debounce(() => {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  filtered = resolvedData.filter(r =>
+    !q || r.issue.toLowerCase().includes(q) || r.ref.toLowerCase().includes(q) || r.barangay.toLowerCase().includes(q)
+  );
+  render();
+}, 250);
+
+document.getElementById('searchInput').addEventListener('input', doFilter);
+render();
+</script>
+</body>
+</html>

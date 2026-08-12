@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+    (function() {
+        var role = localStorage.getItem('cw_role');
+        if (!role) {
+            window.location.replace('../../index.html');
+        } else if (role !== 'cenro') {
+            window.location.replace(role === 'super_admin' ? '../../dashboard.html' : '../ceo/dashboard.html');
+        }
+    })();
+</script>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Report Details — CENRO</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="/css/variables.css" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/sidebar.css" />
+    <link rel="stylesheet" href="/css/navbar.css" />
+    <link rel="stylesheet" href="/css/cards.css" />
+    <link rel="stylesheet" href="/css/buttons.css" />
+    <link rel="stylesheet" href="/css/tables.css" />
+    <link rel="stylesheet" href="/css/forms.css" />
+    <link rel="stylesheet" href="/css/badges.css" />
+    <link rel="stylesheet" href="/css/responsive.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* ── Accent color for CENRO = green ── */
+        :root {
+            --office-color: #10B981;
+            --office-light: #ECFDF5;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--office-color);
+            text-decoration: none;
+            margin-bottom: 14px;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        .back-link .material-symbols-outlined {
+            font-size: 17px;
+        }
+
+        .detail-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .detail-ref {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--office-color);
+        }
+
+        .detail-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .detail-top-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .incident-photo {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+            background: var(--gray-100);
+            display: block;
+        }
+
+        .photo-caption {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .info-table tr {
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .info-table tr:last-child {
+            border-bottom: none;
+        }
+
+        .info-table td {
+            padding: 10px 8px;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        .info-table td:first-child {
+            color: var(--gray-400);
+            font-size: 12px;
+            width: 40px;
+        }
+
+        .info-table td:nth-child(2) {
+            color: var(--gray-500);
+            font-weight: 500;
+            width: 130px;
+        }
+
+        .info-table td:last-child {
+            color: var(--gray-800);
+            font-weight: 600;
+        }
+
+        .info-table .material-symbols-outlined {
+            font-size: 18px;
+            color: var(--office-color);
+        }
+
+        .detail-mid-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .desc-text {
+            font-size: 13px;
+            color: var(--gray-600);
+            line-height: 1.75;
+        }
+
+        #detailMap {
+            height: 200px;
+            border-radius: var(--radius-md);
+        }
+
+        .map-open-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--office-color);
+            text-decoration: none;
+            margin-top: 8px;
+        }
+
+        .map-open-link .material-symbols-outlined {
+            font-size: 15px;
+        }
+
+        .timeline-wrap {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            margin-top: 6px;
+        }
+
+        .timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .timeline-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 17px;
+            left: calc(50% + 17px);
+            width: calc(100% - 34px);
+            height: 2px;
+            background: var(--gray-200);
+            z-index: 0;
+        }
+
+        .timeline-step.done:not(:last-child)::after {
+            background: var(--office-color);
+        }
+
+        .timeline-node {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 1;
+            flex-shrink: 0;
+            border: 2px solid var(--gray-200);
+            background: var(--white);
+            color: var(--gray-400);
+        }
+
+        .timeline-node .material-symbols-outlined {
+            font-size: 17px;
+        }
+
+        .timeline-step.done .timeline-node {
+            background: var(--office-color);
+            border-color: var(--office-color);
+            color: white;
+        }
+
+        .timeline-step.current .timeline-node {
+            background: var(--office-light);
+            border-color: var(--office-color);
+            color: var(--office-color);
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .timeline-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .timeline-date {
+            font-size: 10px;
+            color: var(--gray-400);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .timeline-current-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--office-color);
+            margin-top: 2px;
+            text-align: center;
+        }
+
+        .detail-bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .char-count {
+            font-size: 11px;
+            color: var(--gray-400);
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .btn-resolve {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid var(--office-color);
+            border-radius: var(--radius-md);
+            background: none;
+            color: var(--office-color);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: var(--font-family);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 10px;
+        }
+
+        .btn-resolve:hover {
+            background: var(--office-light);
+        }
+
+        .btn-resolve .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+        .or-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .or-divider::before,
+        .or-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-200);
+        }
+
+        .or-divider span {
+            font-size: 11px;
+            color: var(--gray-400);
+            font-weight: 600;
+        }
+
+        .info-tip {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: var(--office-light);
+            border: 1px solid #6EE7B7;
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            font-size: 12px;
+            color: #059669;
+            margin-top: 20px;
+        }
+
+        .info-tip .material-symbols-outlined {
+            font-size: 16px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-dialog {
+            position: fixed;
+            inset: 0;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .modal-dialog.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-dialog .modal-box {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .modal-icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #ECFDF5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .modal-icon-wrap .material-symbols-outlined {
+            font-size: 34px;
+            color: #10B981;
+        }
+
+        .success-banner {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: #ECFDF5;
+            border: 1px solid #6EE7B7;
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #059669;
+            margin-top: 16px;
+        }
+
+        .success-banner.show {
+            display: flex;
+        }
+
+        .success-banner .material-symbols-outlined {
+            font-size: 22px;
+        }
+
+        [data-theme="dark"] .info-table tr {
+            border-bottom-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .timeline-node {
+            background: #1E2330;
+            border-color: var(--gray-200);
+        }
+
+        [data-theme="dark"] .timeline-step.done .timeline-node {
+            background: var(--office-color);
+            border-color: var(--office-color);
+        }
+    </style>
+</head>
+
+<body data-page="reports">
+    <div class="app-wrapper">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-area" id="mainArea">
+            <nav class="navbar" id="navbar"></nav>
+            <main class="page-content">
+
+                <a href="reports.html" class="back-link">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Back to My Assigned Reports
+                </a>
+
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <div class="detail-title">Environmental Report Details</div>
+                        <div class="detail-ref" id="reportRef">CW-2026-00125</div>
+                    </div>
+                    <div class="detail-meta-row">
+                        <span id="statusBadgeEl"></span>
+                        <span style="font-size:13px;color:var(--gray-500);">Assigned: <strong id="assignedDate">May 21, 2026</strong></span>
+                    </div>
+                </div>
+
+                <div class="detail-top-grid">
+                    <div class="card card-padded">
+                        <div class="card-header"><span class="card-title">Incident Photo</span></div>
+                        <img id="incidentPhoto" class="incident-photo" src="" alt="Incident photo" />
+                        <div class="photo-caption">Photo submitted by the reporting citizen</div>
+                    </div>
+                    <div class="card card-padded">
+                        <div class="card-header"><span class="card-title">Incident Information</span></div>
+                        <table class="info-table">
+                            <tr>
+                                <td><span class="material-symbols-outlined">eco</span></td>
+                                <td>Category</td>
+                                <td id="infoCategory">Environmental</td>
+                            </tr>
+                            <tr>
+                                <td><span class="material-symbols-outlined">location_on</span></td>
+                                <td>Location</td>
+                                <td id="infoLocation">Poblacion, Digos City</td>
+                            </tr>
+                            <tr>
+                                <td><span class="material-symbols-outlined">my_location</span></td>
+                                <td>Coordinates</td>
+                                <td id="infoCoords">6.7490, 125.3570</td>
+                            </tr>
+                            <tr>
+                                <td><span class="material-symbols-outlined">calendar_today</span></td>
+                                <td>Reported Date</td>
+                                <td id="infoDate">May 21, 2026 &bull; 9:45 AM</td>
+                            </tr>
+                            <tr>
+                                <td><span class="material-symbols-outlined">tag</span></td>
+                                <td>Reference Number</td>
+                                <td id="infoRef">CW-2026-00125</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="detail-mid-grid">
+                    <div class="card card-padded">
+                        <div class="card-header"><span class="card-title">Description</span></div>
+                        <p class="desc-text" id="infoDesc">Large pile of garbage beside the drainage canal causing water blockage and foul odor. This area is near a residential zone and needs immediate attention.</p>
+                    </div>
+                    <div class="card card-padded">
+                        <div class="card-header"><span class="card-title">Map Preview</span></div>
+                        <div id="detailMap"></div>
+                        <a href="map.html" class="map-open-link">
+                            Open Full Map <span class="material-symbols-outlined">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card card-padded" style="margin-top:20px;">
+                    <div class="card-header"><span class="card-title">Progress Timeline</span></div>
+                    <div class="timeline-wrap">
+                        <div class="timeline-step done">
+                            <div class="timeline-node"><span class="material-symbols-outlined">check</span></div>
+                            <div class="timeline-label">Submitted</div>
+                            <div class="timeline-date">May 21, 2026<br>9:45 AM</div>
+                        </div>
+                        <div class="timeline-step done">
+                            <div class="timeline-node"><span class="material-symbols-outlined">check</span></div>
+                            <div class="timeline-label">Validated</div>
+                            <div class="timeline-date">May 21, 2026<br>11:20 AM</div>
+                        </div>
+                        <div class="timeline-step done">
+                            <div class="timeline-node"><span class="material-symbols-outlined">check</span></div>
+                            <div class="timeline-label">Assigned to CENRO</div>
+                            <div class="timeline-date">May 21, 2026<br>1:30 PM</div>
+                        </div>
+                        <div class="timeline-step current" id="timelineInProgress">
+                            <div class="timeline-node">4</div>
+                            <div class="timeline-label">In Progress</div>
+                            <div class="timeline-current-label" id="timelineCurrentLabel">Current</div>
+                        </div>
+                        <div class="timeline-step" id="timelineResolved">
+                            <div class="timeline-node">5</div>
+                            <div class="timeline-label">Resolved</div>
+                            <div class="timeline-date" id="timelinePendingLabel">Pending</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-bottom-grid">
+                    <div class="card card-padded">
+                        <div class="card-header"><span class="card-title">Update Progress</span></div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="statusSelect">
+                                <option value="Assigned">Assigned</option>
+                                <option value="In Progress" selected>In Progress</option>
+                                <option value="For Resolution">For Resolution</option>
+                                <option value="Resolved">Resolved</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-top:14px;">
+                            <label class="form-label">Remarks</label>
+                            <textarea class="form-input" id="remarksInput" rows="4" placeholder="Describe the current progress or update..." style="height:auto;padding-top:10px;resize:vertical;" maxlength="500" oninput="document.getElementById('charCount').textContent=this.value.length+'/500'"></textarea>
+                            <div class="char-count" id="charCount">0/500</div>
+                        </div>
+                        <button class="btn btn-primary" style="width:100%;justify-content:center;background:#10B981;border-color:#10B981;" onclick="saveUpdate()">
+                            <span class="material-symbols-outlined">save</span> Save Update
+                        </button>
+                        <div class="or-divider"><span>OR</span></div>
+                        <button class="btn-resolve" id="resolveBtn" onclick="openResolveModal()">
+                            <span class="material-symbols-outlined">check_circle</span> Mark as Resolved
+                        </button>
+                        <div class="success-banner" id="successBanner">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            Report has been marked as Resolved.
+                        </div>
+                    </div>
+
+                    <div class="card card-padded">
+                        <div class="card-header">
+                            <span class="card-title">Progress Photos</span>
+                            <span style="font-size:11px;color:var(--gray-400);font-weight:500;">Before &amp; After</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+                            <!-- BEFORE -->
+                            <div>
+                                <div style="font-size:12px;font-weight:700;color:var(--gray-600);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                                    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#FEF3C7;color:#D97706;font-size:10px;font-weight:800;">B</span>
+                                    Before <span style="font-size:10px;font-weight:500;color:var(--gray-400);">(submitted by citizen)</span>
+                                </div>
+                                <img id="beforePhoto" src="" alt="Before photo" style="width:100%;height:150px;object-fit:cover;border-radius:var(--radius-md);background:var(--gray-100);display:block;" />
+                                <div style="font-size:11px;color:var(--gray-400);margin-top:5px;text-align:center;">Original incident photo</div>
+                            </div>
+
+                            <!-- AFTER -->
+                            <div>
+                                <div style="font-size:12px;font-weight:700;color:var(--gray-600);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                                    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#ECFDF5;color:#10B981;font-size:10px;font-weight:800;">A</span>
+                                    After <span style="font-size:10px;font-weight:500;color:var(--gray-400);">(uploaded by CENRO)</span>
+                                </div>
+                                <div style="width:100%;height:150px;border:2px dashed var(--gray-200);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--gray-400);background:var(--gray-50);">
+                                    <span class="material-symbols-outlined" style="font-size:32px;">add_photo_alternate</span>
+                                    <div style="font-size:12px;">No after photo yet</div>
+                                </div>
+                                <div style="margin-top:8px;text-align:center;">
+                                    <button class="btn btn-secondary" style="font-size:12px;padding:7px 14px;" onclick="Utils.showToast('Photo upload coming in next update','info')">
+                                        <span class="material-symbols-outlined" style="font-size:15px;">cloud_upload</span> Upload After Photo
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-tip">
+                    <span class="material-symbols-outlined">info</span>
+                    Your updates are visible to the City Engineering Office and the reporting citizen.
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="resolveBackdrop"></div>
+    <div class="modal-dialog" id="resolveModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title">Confirm Resolution</span>
+                <button class="modal-close" onclick="closeResolveModal()"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div style="text-align:center;padding:10px 0 20px;">
+                <div class="modal-icon-wrap"><span class="material-symbols-outlined">check_circle</span></div>
+                <div style="font-size:15px;font-weight:700;color:var(--gray-900);margin-bottom:8px;">Mark Report as Resolved?</div>
+                <div style="font-size:13px;color:var(--gray-500);line-height:1.6;">
+                    You are about to mark report <strong id="modalRefLabel">CW-2026-00125</strong> as <strong>Resolved</strong>.<br>
+                    This action will notify the Super Administrator and the reporting citizen.
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button class="btn btn-secondary" style="min-width:120px;" onclick="closeResolveModal()">Cancel</button>
+                <button class="btn btn-primary" style="min-width:120px;background:#10B981;border-color:#10B981;" onclick="confirmResolve()">
+                    <span class="material-symbols-outlined">check_circle</span> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        const REPORTS = {
+            'CW-2026-00125': {
+                issue: 'Illegal Dumping',
+                barangay: 'Poblacion, Digos City',
+                lat: 6.7490,
+                lng: 125.3570,
+                status: 'In Progress',
+                date: 'May 21, 2026 · 9:45 AM',
+                assigned: 'May 21, 2026',
+                photo: 'Illegal Dumping',
+                desc: 'Large pile of garbage beside the drainage canal causing water blockage and foul odor. This area is near a residential zone and needs immediate attention.'
+            },
+            'CW-2026-00118': {
+                issue: 'Blocked Canal',
+                barangay: 'Badiang, Digos City',
+                lat: 6.7610,
+                lng: 125.3680,
+                status: 'In Progress',
+                date: 'May 20, 2026 · 2:30 PM',
+                assigned: 'May 20, 2026',
+                photo: 'Blocked Drainage',
+                desc: 'Canal in Badiang is heavily clogged with solid waste and debris, causing flooding in nearby residential areas during rain.'
+            },
+            'CW-2026-00110': {
+                issue: 'Overgrown Vegetation',
+                barangay: 'Carmen, Digos City',
+                lat: 6.7420,
+                lng: 125.3480,
+                status: 'For Resolution',
+                date: 'May 19, 2026 · 11:15 AM',
+                assigned: 'May 19, 2026',
+                photo: 'Overgrown Vegetation',
+                desc: 'Vegetation along the road in Carmen has grown excessively and is obstructing the footpath and road visibility for drivers.'
+            },
+            'CW-2026-00105': {
+                issue: 'Illegal Dumping',
+                barangay: 'Soong, Digos City',
+                lat: 6.7640,
+                lng: 125.3360,
+                status: 'Resolved',
+                date: 'May 18, 2026 · 4:05 PM',
+                assigned: 'May 18, 2026',
+                photo: 'Illegal Dumping',
+                desc: 'Garbage dumped illegally along the creek bank in Soong. Residents reported foul smell and health hazard.'
+            },
+            'CW-2026-00098': {
+                issue: 'Blocked Canal',
+                barangay: 'Badiang, Digos City',
+                lat: 6.7480,
+                lng: 125.3520,
+                status: 'Resolved',
+                date: 'May 18, 2026 · 10:20 AM',
+                assigned: 'May 18, 2026',
+                photo: 'Blocked Drainage',
+                desc: 'Secondary canal blocked by accumulated waste causing overflow during rainy season.'
+            },
+            'CW-2026-00092': {
+                issue: 'Soil Erosion',
+                barangay: 'Goma, Digos City',
+                lat: 6.7650,
+                lng: 125.3720,
+                status: 'Assigned',
+                date: 'May 17, 2026 · 9:00 AM',
+                assigned: 'May 17, 2026',
+                photo: 'Soil Erosion',
+                desc: 'Soil erosion along the hillside in Goma is causing land instability. Immediate assessment is required.'
+            },
+        };
+
+        const ref = new URLSearchParams(window.location.search).get('ref') || 'CW-2026-00125';
+        const report = REPORTS[ref] || REPORTS['CW-2026-00125'];
+
+        const statusColors = {
+            'In Progress': '#F97316',
+            'For Resolution': '#F59E0B',
+            'Resolved': '#10B981',
+            'Assigned': '#1A56DB'
+        };
+        const statusBg = {
+            'In Progress': '#FFF7ED',
+            'For Resolution': '#FFFBEB',
+            'Resolved': '#ECFDF5',
+            'Assigned': '#EFF6FF'
+        };
+
+        document.getElementById('reportRef').textContent = ref;
+        document.getElementById('infoRef').textContent = ref;
+        document.getElementById('infoCategory').textContent = 'Environmental';
+        document.getElementById('infoLocation').textContent = report.barangay;
+        document.getElementById('infoCoords').textContent = report.lat.toFixed(6) + ', ' + report.lng.toFixed(6);
+        document.getElementById('infoDate').innerHTML = report.date.replace(' · ', ' &bull; ');
+        document.getElementById('infoDesc').textContent = report.desc;
+        document.getElementById('assignedDate').textContent = report.assigned;
+        document.getElementById('modalRefLabel').textContent = ref;
+        document.getElementById('incidentPhoto').src = getPhotoUrl(report.photo);
+        document.getElementById('beforePhoto').src = getPhotoUrl(report.photo);
+        document.getElementById('statusSelect').value = report.status;
+        document.getElementById('statusBadgeEl').innerHTML = `<span style="display:inline-flex;align-items:center;padding:5px 14px;border-radius:var(--radius-full);font-size:13px;font-weight:700;background:${statusBg[report.status]};color:${statusColors[report.status]};">${report.status}</span>`;
+
+        if (report.status === 'Resolved') {
+            document.getElementById('resolveBtn').style.display = 'none';
+            document.getElementById('successBanner').classList.add('show');
+            markTimelineResolved();
+        }
+
+        const map = L.map('detailMap', {
+            zoomControl: false,
+            scrollWheelZoom: false,
+            dragging: false
+        }).setView([report.lat, report.lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            maxZoom: 19
+        }).addTo(map);
+        const icon = L.divIcon({
+            className: '',
+            html: `<div style="width:24px;height:24px;border-radius:50%;background:#10B981;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+        L.marker([report.lat, report.lng], {
+            icon
+        }).addTo(map).bindPopup(report.issue).openPopup();
+
+        function saveUpdate() {
+            const status = document.getElementById('statusSelect').value;
+            const remarks = document.getElementById('remarksInput').value.trim();
+            if (!remarks) {
+                Utils.showToast('Please add remarks before saving', 'error');
+                return;
+            }
+            Utils.showToast('Progress updated successfully', 'success');
+            document.getElementById('statusBadgeEl').innerHTML = `<span style="display:inline-flex;align-items:center;padding:5px 14px;border-radius:var(--radius-full);font-size:13px;font-weight:700;background:${statusBg[status]};color:${statusColors[status]};">${status}</span>`;
+        }
+
+        function openResolveModal() {
+            document.getElementById('resolveBackdrop').classList.add('active');
+            document.getElementById('resolveModal').classList.add('active');
+        }
+
+        function closeResolveModal() {
+            document.getElementById('resolveBackdrop').classList.remove('active');
+            document.getElementById('resolveModal').classList.remove('active');
+        }
+
+        function confirmResolve() {
+            closeResolveModal();
+            document.getElementById('statusBadgeEl').innerHTML = `<span style="display:inline-flex;align-items:center;padding:5px 14px;border-radius:var(--radius-full);font-size:13px;font-weight:700;background:#ECFDF5;color:#10B981;">Resolved</span>`;
+            document.getElementById('resolveBtn').style.display = 'none';
+            document.getElementById('successBanner').classList.add('show');
+            markTimelineResolved();
+            Utils.showToast('Report marked as Resolved successfully', 'success');
+        }
+
+        function markTimelineResolved() {
+            const ip = document.getElementById('timelineInProgress');
+            const rv = document.getElementById('timelineResolved');
+            ip.classList.remove('current');
+            ip.classList.add('done');
+            ip.querySelector('.timeline-node').innerHTML = '<span class="material-symbols-outlined">check</span>';
+            const cur = document.getElementById('timelineCurrentLabel');
+            if (cur) cur.remove();
+            rv.classList.add('done');
+            rv.querySelector('.timeline-node').innerHTML = '<span class="material-symbols-outlined">check</span>';
+            document.getElementById('timelinePendingLabel').textContent = new Date().toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        document.getElementById('resolveBackdrop').addEventListener('click', closeResolveModal);
+    </script>
+</body>
+
+</html>

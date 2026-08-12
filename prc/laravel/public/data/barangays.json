@@ -1,0 +1,30 @@
+{
+  "barangays": [
+    { "name": "Aplaya",       "lat": 6.7500, "lng": 125.3540 },
+    { "name": "Badiang",      "lat": 6.7610, "lng": 125.3680 },
+    { "name": "Baracatan",    "lat": 6.7380, "lng": 125.3420 },
+    { "name": "Bato",         "lat": 6.7290, "lng": 125.3350 },
+    { "name": "Carmen",       "lat": 6.7420, "lng": 125.3480 },
+    { "name": "Dawis",        "lat": 6.7320, "lng": 125.3680 },
+    { "name": "Digos Poblacion","lat": 6.7490, "lng": 125.3570 },
+    { "name": "Goma",         "lat": 6.7650, "lng": 125.3720 },
+    { "name": "Kansas",       "lat": 6.7220, "lng": 125.3290 },
+    { "name": "Kapatagan",    "lat": 6.7340, "lng": 125.3760 },
+    { "name": "Kiagot",       "lat": 6.7180, "lng": 125.3840 },
+    { "name": "Lungag",       "lat": 6.7560, "lng": 125.3420 },
+    { "name": "Mahayahay",    "lat": 6.7690, "lng": 125.3480 },
+    { "name": "Magsaysay",    "lat": 6.7480, "lng": 125.3520 },
+    { "name": "Matti",        "lat": 6.7280, "lng": 125.3460 },
+    { "name": "Ruparan",      "lat": 6.7140, "lng": 125.3600 },
+    { "name": "San Agustin",  "lat": 6.7400, "lng": 125.3340 },
+    { "name": "San Jose",     "lat": 6.7720, "lng": 125.3580 },
+    { "name": "San Miguel",   "lat": 6.7580, "lng": 125.3740 },
+    { "name": "Santa Cruz",   "lat": 6.7350, "lng": 125.3550 },
+    { "name": "Soong",        "lat": 6.7640, "lng": 125.3360 },
+    { "name": "Tiguman",      "lat": 6.7460, "lng": 125.3660 },
+    { "name": "Tres De Mayo", "lat": 6.7250, "lng": 125.3520 },
+    { "name": "Zone I",       "lat": 6.7505, "lng": 125.3560 },
+    { "name": "Zone II",      "lat": 6.7560, "lng": 125.3600 },
+    { "name": "Zone III",     "lat": 6.7530, "lng": 125.3570 }
+  ]
+}
