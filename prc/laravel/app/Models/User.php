@@ -51,7 +51,8 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'created_at'    => 'datetime',
             'updated_at'    => 'datetime',
-            'password_hash' => 'hashed',
+            // NOTE: Do NOT cast password_hash as 'hashed' — it breaks Auth::attempt()
+            // Password hashing is handled manually in controllers/seeders.
         ];
     }
 
