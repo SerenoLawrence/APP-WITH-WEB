@@ -7,7 +7,6 @@ import '../../core/utils/helpers.dart';
 import '../../models/report.dart';
 import '../../widgets/cards/activity_card.dart';
 import '../../widgets/cards/status_card.dart';
-import '../../widgets/timeline/progress_timeline.dart';
 
 class TrackReportScreen extends StatelessWidget {
   final Map<String, dynamic> reportData;
@@ -95,10 +94,6 @@ class _TrackReportBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final catColor = AppHelpers.getCategoryColor(report.category);
-    final catBg = AppHelpers.getCategoryBgColor(report.category);
-    final catIcon = AppHelpers.getCategoryIcon(report.category);
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -180,148 +175,8 @@ class _TrackReportBody extends StatelessWidget {
             ),
             const SizedBox(height: 14),
 
-            // ── Photo + info ──────────────────────────────────────────
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Photo
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: 140,
-                    height: 130,
-                    color: const Color(0xFF1A2A3A),
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: Icon(
-                            catIcon,
-                            color: AppColors.white.withOpacity(0.3),
-                            size: 40,
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 8,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.fullscreen_rounded,
-                                  color: AppColors.white,
-                                  size: 12,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'View Photo',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    color: AppColors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Info
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          report.issue,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: catBg,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(catIcon, size: 10, color: catColor),
-                              const SizedBox(width: 4),
-                              Text(
-                                report.category,
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: catColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on_rounded,
-                              size: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                'Barangay ${report.barangay}, Digos City',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        const Divider(height: 1, color: AppColors.divider),
-                        const SizedBox(height: 8),
-                        _InfoRow(
-                          label: 'Reference No.',
-                          value: report.referenceNumber,
-                        ),
-                        const SizedBox(height: 4),
-                        _InfoRow(
-                          label: 'Submitted',
-                          value: AppHelpers.formatDateTime(report.submittedAt),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            // ── Before / After Photos ─────────────────────────────────
+            _BeforeAfterPhotos(report: report),
             const SizedBox(height: 14),
 
             // ── Description ───────────────────────────────────────────
@@ -750,41 +605,6 @@ class _TrackReportBody extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _VerticalTimeline extends StatelessWidget {
   final IncidentReport report;
   static const _steps = [
@@ -978,4 +798,518 @@ class _MiniMapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_) => false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Before / After Photos section
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _BeforeAfterPhotos extends StatelessWidget {
+  final IncidentReport report;
+  const _BeforeAfterPhotos({required this.report});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasAfter = report.afterImageUrl != null;
+    final catColor = AppHelpers.getCategoryColor(report.category);
+    final catBg = AppHelpers.getCategoryBgColor(report.category);
+    final catIcon = AppHelpers.getCategoryIcon(report.category);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: catBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(catIcon, color: catColor, size: 16),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        report.issue,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded,
+                              size: 11, color: AppColors.textSecondary),
+                          const SizedBox(width: 2),
+                          Text(
+                            'Barangay ${report.barangay}, Digos City',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Reference number pill
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.navy.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    report.referenceNumber,
+                    style: GoogleFonts.robotoMono(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.divider),
+
+          // ── Photo panels ─────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: hasAfter
+                ? Row(
+                    children: [
+                      // Before photo
+                      Expanded(
+                        child: _PhotoPanel(
+                          label: 'Before',
+                          labelColor: AppColors.statusPending,
+                          labelBg: const Color(0xFFFEF3C7),
+                          imageUrl: report.imageUrl,
+                          fallbackIcon: catIcon,
+                          fallbackColor: catColor,
+                          onTap: () => _openFullscreen(
+                              context, report.imageUrl, 'Before Photo'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Swap arrow
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySurface,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: AppColors.primary
+                                      .withValues(alpha: 0.3)),
+                            ),
+                            child: const Icon(
+                              Icons.compare_arrows_rounded,
+                              size: 14,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 10),
+                      // After photo
+                      Expanded(
+                        child: _PhotoPanel(
+                          label: 'After',
+                          labelColor: AppColors.statusResolved,
+                          labelBg: const Color(0xFFDCFCE7),
+                          imageUrl: report.afterImageUrl,
+                          fallbackIcon: Icons.check_circle_outline_rounded,
+                          fallbackColor: AppColors.statusResolved,
+                          onTap: () => _openFullscreen(
+                              context, report.afterImageUrl, 'After Photo'),
+                        ),
+                      ),
+                    ],
+                  )
+                // Only before photo (not yet resolved)
+                : _PhotoPanel(
+                    label: 'Before',
+                    labelColor: AppColors.statusPending,
+                    labelBg: const Color(0xFFFEF3C7),
+                    imageUrl: report.imageUrl,
+                    fallbackIcon: catIcon,
+                    fallbackColor: catColor,
+                    fullWidth: true,
+                    onTap: () => _openFullscreen(
+                        context, report.imageUrl, 'Incident Photo'),
+                    afterPending: report.status != 'Resolved',
+                  ),
+          ),
+
+          // ── Resolved timestamp (if resolved) ─────────────────────────
+          if (report.isResolved && report.resolvedAt != null)
+            Container(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_rounded,
+                      color: AppColors.statusResolved, size: 14),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Resolved on ${AppHelpers.formatDateTime(report.resolvedAt!)}',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.statusResolved,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _openFullscreen(
+      BuildContext context, String? url, String title) {
+    if (url == null) return;
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black87,
+        barrierDismissible: true,
+        pageBuilder: (_, __, ___) =>
+            _FullscreenPhotoView(imageUrl: url, title: title),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Single photo panel (before or after)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PhotoPanel extends StatelessWidget {
+  final String label;
+  final Color labelColor;
+  final Color labelBg;
+  final String? imageUrl;
+  final IconData fallbackIcon;
+  final Color fallbackColor;
+  final bool fullWidth;
+  final bool afterPending;
+  final VoidCallback onTap;
+
+  const _PhotoPanel({
+    required this.label,
+    required this.labelColor,
+    required this.labelBg,
+    required this.imageUrl,
+    required this.fallbackIcon,
+    required this.fallbackColor,
+    required this.onTap,
+    this.fullWidth = false,
+    this.afterPending = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final height = fullWidth ? 180.0 : 150.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label badge
+        Container(
+          margin: const EdgeInsets.only(bottom: 6),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: labelBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                label == 'After'
+                    ? Icons.check_circle_rounded
+                    : Icons.camera_alt_rounded,
+                size: 11,
+                color: labelColor,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: labelColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Photo or placeholder
+        GestureDetector(
+          onTap: imageUrl != null ? onTap : null,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              height: height,
+              color: const Color(0xFF1A2A3A),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Actual image
+                  if (imageUrl != null)
+                    Image.network(
+                      imageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: progress.expectedTotalBytes != null
+                                ? progress.cumulativeBytesLoaded /
+                                    progress.expectedTotalBytes!
+                                : null,
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => _FallbackPhoto(
+                        icon: fallbackIcon,
+                        color: fallbackColor,
+                        label: 'Photo unavailable',
+                      ),
+                    )
+                  else if (afterPending)
+                    // After photo not yet uploaded
+                    _FallbackPhoto(
+                      icon: Icons.hourglass_top_rounded,
+                      color: AppColors.textHint,
+                      label: 'After photo pending\nresolution',
+                    )
+                  else
+                    _FallbackPhoto(
+                      icon: fallbackIcon,
+                      color: fallbackColor,
+                      label: 'No photo attached',
+                    ),
+
+                  // Tap to expand overlay (only if image loaded)
+                  if (imageUrl != null)
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.fullscreen_rounded,
+                                color: AppColors.white, size: 12),
+                            const SizedBox(width: 4),
+                            Text(
+                              'View',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fallback placeholder when no image
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FallbackPhoto extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  const _FallbackPhoto({
+    required this.icon,
+    required this.color,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color.withValues(alpha: 0.5), size: 36),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: AppColors.white.withValues(alpha: 0.5),
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fullscreen photo viewer (tap to dismiss)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FullscreenPhotoView extends StatelessWidget {
+  final String imageUrl;
+  final String title;
+
+  const _FullscreenPhotoView({
+    required this.imageUrl,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            // Image centered
+            Center(
+              child: InteractiveViewer(
+                panEnabled: true,
+                scaleEnabled: true,
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (_, child, progress) {
+                    if (progress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.white),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.broken_image_rounded,
+                    color: AppColors.white,
+                    size: 64,
+                  ),
+                ),
+              ),
+            ),
+
+            // Header bar
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 4),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded,
+                          color: AppColors.white, size: 26),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Tap to close hint
+            Positioned(
+              bottom: 32,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Tap anywhere to close  •  Pinch to zoom',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

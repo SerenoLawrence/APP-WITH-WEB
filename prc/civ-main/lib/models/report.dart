@@ -9,7 +9,8 @@ class IncidentReport {
   final String severity;
   final DateTime submittedAt;
   final DateTime? resolvedAt;
-  final String? imageUrl;
+  final String? imageUrl;       // before photo (citizen submitted)
+  final String? afterImageUrl;  // after photo (office uploaded on resolve)
   final double latitude;
   final double longitude;
   final String? assignedOffice;
@@ -27,6 +28,7 @@ class IncidentReport {
     required this.submittedAt,
     this.resolvedAt,
     this.imageUrl,
+    this.afterImageUrl,
     required this.latitude,
     required this.longitude,
     this.assignedOffice,
@@ -57,6 +59,7 @@ class IncidentReport {
     String? assignedOffice,
     DateTime? resolvedAt,
     List<ActivityEntry>? activityLog,
+    String? afterImageUrl,
   }) =>
       IncidentReport(
         id: id,
@@ -70,6 +73,7 @@ class IncidentReport {
         submittedAt: submittedAt,
         resolvedAt: resolvedAt ?? this.resolvedAt,
         imageUrl: imageUrl,
+        afterImageUrl: afterImageUrl ?? this.afterImageUrl,
         latitude: latitude,
         longitude: longitude,
         assignedOffice: assignedOffice ?? this.assignedOffice,
