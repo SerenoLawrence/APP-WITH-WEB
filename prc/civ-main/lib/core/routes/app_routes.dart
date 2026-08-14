@@ -2,10 +2,15 @@ class AppRoutes {
   AppRoutes._();
 
   static const String splash = '/';
+  static const String landing = '/landing';
   static const String login = '/login';
   static const String otp = '/otp';
   static const String register = '/register';
   static const String home = '/home';
+
+  // Visitor (guest) flow — no login required
+  static const String visitor = '/visitor';
+  static const String trackByReference = '/track-by-reference';
 
   // Report flow
   static const String reportCategory = '/report/category';

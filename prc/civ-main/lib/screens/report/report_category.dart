@@ -145,7 +145,7 @@ class _CategoryCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? color.withOpacity(0.14)
+                  ? color.withValues(alpha: 0.14)
                   : const Color(0x0C000000),
               blurRadius: isSelected ? 16 : 8,
               offset: const Offset(0, 4),
@@ -193,7 +193,7 @@ class _CategoryCard extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           color: isSelected
-                              ? color.withOpacity(0.8)
+                              ? color.withValues(alpha: 0.8)
                               : AppColors.textHint,
                           fontWeight: FontWeight.w500,
                         ),
@@ -246,17 +246,11 @@ class _CategoryCard extends StatelessWidget {
 
 class _ReportNavBar extends StatelessWidget {
   final bool showBack;
-  final VoidCallback? onBack;
   final VoidCallback? onNext;
-  final String nextLabel;
-  final Color? nextColor;
 
   const _ReportNavBar({
     this.showBack = true,
-    this.onBack,
     this.onNext,
-    this.nextLabel = 'Next →',
-    this.nextColor,
   });
 
   @override
@@ -272,7 +266,7 @@ class _ReportNavBar extends StatelessWidget {
           if (showBack) ...[
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: onBack ?? () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
                 label: const Text('Back'),
                 style: OutlinedButton.styleFrom(
@@ -294,21 +288,21 @@ class _ReportNavBar extends StatelessWidget {
               onPressed: onNext,
               style: ElevatedButton.styleFrom(
                 backgroundColor: onNext != null
-                    ? (nextColor ?? AppColors.primary)
+                    ? AppColors.primary
                     : AppColors.textDisabled,
                 foregroundColor: AppColors.white,
                 minimumSize: const Size(0, 52),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
                 elevation: onNext != null ? 2 : 0,
-                shadowColor: (nextColor ?? AppColors.primary).withOpacity(0.3),
+                shadowColor: AppColors.primary.withValues(alpha: 0.3),
                 textStyle: GoogleFonts.inter(
                     fontSize: 15, fontWeight: FontWeight.w700),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(nextLabel.replaceAll(' →', '')),
+                  const Text('Next'),
                   if (onNext != null) ...[
                     const SizedBox(width: 6),
                     const Icon(Icons.arrow_forward_rounded, size: 18),

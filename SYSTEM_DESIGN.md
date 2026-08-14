@@ -3,6 +3,7 @@
 > University of Mindanao — Digos Branch | BS Information Technology | 2026
 > Proponents: Renz Justine Y. Borinaga, Jhon Carlo Mag-Usara, Lawrence Roy P. Sereno
 > Adviser: Cyvil Dave Dasargo, MIT
+> Last Updated: August 13, 2026
 
 ---
 
@@ -16,93 +17,122 @@
    - [Level 2 — Report Submission Sub-process](#level-2--report-submission-sub-process)
    - [Level 2 — Report Management Sub-process](#level-2--report-management-sub-process)
 4. [Use Case Diagram](#4-use-case-diagram)
-   - [Actors](#actors)
-   - [Use Case Descriptions](#use-case-descriptions)
 5. [Report Status State Diagram](#5-report-status-state-diagram)
-
----
+6. [Report Categories](#6-report-categories)
+7. [Technology Stack](#7-technology-stack)
 
 ---
 
 ## 1. System Architecture Design
 
-CIVILWATCH follows a **3-Tier Client-Server Architecture** with an external cloud storage layer.
+CIVILWATCH follows a **3-Tier Client-Server Architecture** with two separate client surfaces (web admin + mobile app) sharing one Laravel backend.
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          PRESENTATION TIER                              │
-│                                                                         │
-│   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐  │
-│   │   Super Admin    │   │   CEO Portal     │   │  CENRO Portal    │  │
-│   │   Web Portal     │   │  (Blue Theme)    │   │  (Green Theme)   │  │
-│   │  (11 Pages)      │   │  (8 Pages)       │   │  (8 Pages)       │  │
-│   └────────┬─────────┘   └────────┬─────────┘   └────────┬─────────┘  │
-│            │                      │                       │            │
-│      HTML5 + CSS3 + Vanilla JS + Leaflet.js + Chart.js                 │
-└────────────┼──────────────────────┼───────────────────────┼────────────┘
-             │         HTTPS / REST API / WebSocket          │
-             │                      │                       │
-┌────────────┼──────────────────────┼───────────────────────┼────────────┐
-│            │         APPLICATION TIER                      │            │
-│            └──────────────────────┴───────────────────────┘            │
-│                                   │                                     │
-│                    ┌──────────────▼──────────────┐                     │
-│                    │   Node.js + Express.js       │                     │
-│                    │   REST API Server            │                     │
-│                    │                              │                     │
-│                    │  ┌─────────────────────────┐ │                     │
-│                    │  │  Middleware Layer        │ │                     │
-│                    │  │  • JWT Auth Guard        │ │                     │
-│                    │  │  • Role Check (RBAC)     │ │                     │
-│                    │  │  • Multer Upload         │ │                     │
-│                    │  │  • CORS / Helmet         │ │                     │
-│                    │  └─────────────────────────┘ │                     │
-│                    │                              │                     │
-│                    │  ┌──────────────────────────┐│                     │
-│                    │  │  Route Controllers        ││                     │
-│                    │  │  • /api/auth              ││                     │
-│                    │  │  • /api/reports           ││                     │
-│                    │  │  • /api/users             ││                     │
-│                    │  │  • /api/analytics         ││                     │
-│                    │  │  • /api/notifications     ││                     │
-│                    │  │  • /api/map/pins          ││                     │
-│                    │  └──────────────────────────┘│                     │
-│                    │                              │                     │
-│                    │  Socket.io (real-time)       │                     │
-│                    └──────────────┬───────────────┘                     │
-└───────────────────────────────────┼─────────────────────────────────────┘
-                                    │
-┌───────────────────────────────────┼─────────────────────────────────────┐
-│                          DATA TIER │                                     │
-│                                   │                                      │
-│        ┌──────────────────────────▼──────────────────┐                  │
-│        │              MySQL Database                  │                  │
-│        │  (Sequelize ORM)                             │                  │
-│        │                                              │                  │
-│        │  Tables: users, reports, report_photos,      │                  │
-│        │          report_timeline, notifications,     │                  │
-│        │          report_assignments, categories,     │                  │
-│        │          barangays                           │                  │
-│        └──────────────────────────────────────────────┘                  │
-│                                                                           │
-│        ┌──────────────────────────────────────────────┐                  │
-│        │           Cloudinary CDN                     │                  │
-│        │  • Before photos (citizen-submitted)         │                  │
-│        │  • After photos (office-uploaded)            │                  │
-│        │  • Stores: public_id + secure_url in MySQL   │                  │
-│        └──────────────────────────────────────────────┘                  │
-└───────────────────────────────────────────────────────────────────────────┘
-
-EXTERNAL ACTORS
-  ┌──────────────────┐        ┌──────────────────┐
-  │  Citizen         │        │  Mobile App      │
-  │  (Mobile/Web)    │        │  (React Native / │
-  │  Submits reports │        │   Flutter - TBD) │
-  └──────────────────┘        └──────────────────┘
-       Both hit POST /api/reports (unauthenticated)
+┌──────────────────────────────────────────────────────────────────────────┐
+│                         PRESENTATION TIER                                │
+│                                                                          │
+│  ┌───────────────────────┐          ┌───────────────────────────────┐   │
+│  │   Admin Web Portal    │          │   Citizen Mobile App          │   │
+│  │   HTML5 + CSS3 + JS   │          │   Flutter / Dart              │   │
+│  │                       │          │                               │   │
+│  │  Super Admin (11 pg)  │          │  Android & iOS                │   │
+│  │  CEO Portal   (8 pg)  │          │  18 screens                   │   │
+│  │  CENRO Portal (8 pg)  │          │  flutter_map + OpenStreetMap  │   │
+│  │                       │          │  Nominatim reverse geocoding  │   │
+│  │  Leaflet.js maps       │          │  6-digit PIN authentication   │   │
+│  │  Chart.js analytics    │          │  Report submission wizard     │   │
+│  └──────────┬────────────┘          └───────────────┬───────────────┘   │
+└─────────────┼──────────────────────────────────────┼────────────────────┘
+              │  HTTPS / REST API                     │  HTTPS / REST API
+              │  /api/* and /api/admin/*              │  /api/mobile/*
+              │  (Sanctum — staff token)              │  (Sanctum — citizen token)
+              └───────────────────┬───────────────────┘
+                                  │
+┌─────────────────────────────────┼────────────────────────────────────────┐
+│                        APPLICATION TIER                                  │
+│                                 │                                        │
+│              ┌──────────────────▼──────────────────┐                    │
+│              │         Laravel 12 Backend           │                    │
+│              │         PHP + Sanctum                │                    │
+│              │                                      │                    │
+│              │  ┌──────────────────────────────┐   │                    │
+│              │  │  Middleware Layer             │   │                    │
+│              │  │  • auth:sanctum (admin)       │   │                    │
+│              │  │  • auth:citizen (mobile)      │   │                    │
+│              │  │  • CORS                       │   │                    │
+│              │  └──────────────────────────────┘   │                    │
+│              │                                      │                    │
+│              │  ┌──────────────────────────────┐   │                    │
+│              │  │  Route Groups                 │   │                    │
+│              │  │  • /api/mobile/*  (citizens)  │   │                    │
+│              │  │  • /api/admin/*   (staff)     │   │                    │
+│              │  │  • /api/*         (legacy)    │   │                    │
+│              │  │  • /admin/*       (Blade web) │   │                    │
+│              │  └──────────────────────────────┘   │                    │
+│              │                                      │                    │
+│              │  ┌──────────────────────────────┐   │                    │
+│              │  │  Controllers                  │   │                    │
+│              │  │  Mobile: Auth, Report,        │   │                    │
+│              │  │          Notification,        │   │                    │
+│              │  │          Announcement         │   │                    │
+│              │  │  Admin:  CitizenReport,       │   │                    │
+│              │  │          Office,              │   │                    │
+│              │  │          Announcement, Web    │   │                    │
+│              │  │  Legacy: Auth, Report,        │   │                    │
+│              │  │          Analytics, Users,    │   │                    │
+│              │  │          Notifications        │   │                    │
+│              │  └──────────────────────────────┘   │                    │
+│              └──────────────────┬───────────────────┘                    │
+└─────────────────────────────────┼────────────────────────────────────────┘
+                                  │  Eloquent ORM
+┌─────────────────────────────────┼────────────────────────────────────────┐
+│                           DATA TIER                                      │
+│                                 │                                        │
+│         ┌───────────────────────▼──────────────────────┐                │
+│         │               MySQL Database                  │                │
+│         │               (Eloquent ORM)                  │                │
+│         │                                               │                │
+│         │  users                  — Admin staff         │                │
+│         │  citizens               — Mobile app users    │                │
+│         │  otp_codes              — OTP verification    │                │
+│         │  government_offices     — CEO, CENRO, etc.    │                │
+│         │  citizen_reports        — Reports from app    │                │
+│         │  report_activities      — Status change log   │                │
+│         │  citizen_notifications  — Per-citizen alerts  │                │
+│         │  announcements          — City announcements  │                │
+│         └───────────────────────────────────────────────┘                │
+│                                                                          │
+│         ┌───────────────────────────────────────────────┐                │
+│         │  Laravel Storage (local disk / future S3)     │                │
+│         │  • Before photos (citizen-submitted)          │                │
+│         │  • After photos  (office-uploaded)            │                │
+│         │  • Accessible via /storage/... public URL     │                │
+│         └───────────────────────────────────────────────┘                │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Two Separate Auth Guards (Side by Side)
+
+```
+┌──────────────────────────────────────┐
+│  STAFF / ADMIN                       │
+│  Table: users                        │
+│  Fields: email + password_hash       │
+│  Guard:  auth:sanctum                │
+│  Routes: /api/* and /admin/*         │
+│  Login:  POST /api/login             │
+└──────────────────────────────────────┘
+
+┌──────────────────────────────────────┐
+│  CITIZENS (Flutter app users)        │
+│  Table: citizens                     │
+│  Fields: phone + pin_hash            │
+│  Guard:  auth:citizen                │
+│  Routes: /api/mobile/*               │
+│  Login:  POST /api/mobile/auth/      │
+│          send-otp → verify-otp       │
+└──────────────────────────────────────┘
+```
 
 ---
 
@@ -111,303 +141,290 @@ EXTERNAL ACTORS
 > Notation: PK = Primary Key | FK = Foreign Key | UQ = Unique | NN = Not Null
 
 ```
-┌─────────────────────────────────┐
-│            USERS                │
-├─────────────────────────────────┤
-│ PK  id              INT         │
-│     name            VARCHAR(100)│
-│ UQ  email           VARCHAR(100)│
-│     password_hash   VARCHAR(255)│
-│     role    ENUM(super_admin,   │
-│                    ceo, cenro)  │
-│     office          VARCHAR(50) │
-│     avatar_url      TEXT        │
-│     is_active       BOOLEAN     │
-│     created_at      DATETIME    │
-│     updated_at      DATETIME    │
-└────────────┬────────────────────┘
-             │ 1
-             │ creates / performs
+┌──────────────────────────────────┐
+│             USERS                │
+├──────────────────────────────────┤
+│ PK  id              BIGINT       │
+│     name            VARCHAR(100) │
+│ UQ  email           VARCHAR(100) │
+│     password_hash   VARCHAR(255) │
+│     role  ENUM(super_admin,      │
+│                ceo, cenro)       │
+│     office          VARCHAR(50)  │
+│     is_active       BOOLEAN      │
+│     created_at      TIMESTAMP    │
+│     updated_at      TIMESTAMP    │
+└────────────┬─────────────────────┘
+             │ 1 (performs admin actions)
              │ N
-┌────────────▼────────────────────┐          ┌──────────────────────────────┐
-│            REPORTS              │          │          CATEGORIES          │
-├─────────────────────────────────┤          ├──────────────────────────────┤
-│ PK  id              INT         │          │ PK  id          INT          │
-│ UQ  reference_no    VARCHAR(20) │          │     name        VARCHAR(100) │
-│     title           VARCHAR(255)│          │     type  ENUM(infrastructure│
-│     description     TEXT        │          │               ,environmental)│
-│ FK  category_id     INT ────────┼──────────►     icon        VARCHAR(50)  │
-│     status  ENUM(pending,       │          │     color       VARCHAR(20)  │
-│              assigned,          │          └──────────────────────────────┘
-│              in_progress,       │
-│              for_resolution,    │          ┌──────────────────────────────┐
-│              resolved)          │          │          BARANGAYS           │
-│     priority ENUM(low,medium,   │          ├──────────────────────────────┤
-│                   high,urgent)  │          │ PK  id          INT          │
-│ FK  barangay_id     INT ────────┼──────────►     name        VARCHAR(100) │
-│     lat             DECIMAL(10,8)│         │     lat         DECIMAL(10,8)│
-│     lng             DECIMAL(11,8)│         │     lng         DECIMAL(11,8)│
-│ FK  submitted_by    INT         │          │     district    VARCHAR(50)  │
-│ FK  assigned_to_office  INT     │          └──────────────────────────────┘
-│     created_at      DATETIME    │
-│     updated_at      DATETIME    │
-└──┬──────┬──────┬────────────────┘
-   │      │      │
-   │ 1    │ 1    │ 1
-   │      │      │
-   │ N    │ N    │ N
-   │      │      │
-┌──▼──────┴┐  ┌──▼─────────────────┐   ┌────────────────────────────────┐
-│REPORT_   │  │  REPORT_TIMELINE   │   │       REPORT_ASSIGNMENTS       │
-│PHOTOS    │  ├────────────────────┤   ├────────────────────────────────┤
-├──────────┤  │ PK  id     INT     │   │ PK  id              INT        │
-│PK id INT │  │ FK  report_id INT  │   │ FK  report_id       INT        │
-│FK report_│  │     action VARCHAR │   │ FK  assigned_to     INT        │
-│   _id INT│  │     note   TEXT    │   │ FK  assigned_by     INT        │
-│   type   │  │ FK  performed_by   │   │     priority        ENUM       │
-│   ENUM   │  │         INT        │   │     notes           TEXT       │
-│(before/  │  │     created_at     │   │     assigned_at     DATETIME   │
-│  after)  │  │         DATETIME   │   └────────────────────────────────┘
-│cloudinary│  └────────────────────┘
-│_url TEXT │
-│cloudinary│   ┌───────────────────────────────┐
-│_public_id│   │         NOTIFICATIONS         │
-│    TEXT  │   ├───────────────────────────────┤
-│FK upload-│   │ PK  id          INT           │
-│  _by INT │   │ FK  user_id     INT           │
-│created_at│   │     message     TEXT          │
-│ DATETIME │   │     type  ENUM(report,        │
-└──────────┘   │           assignment,         │
-               │           status,system)      │
-               │     is_read     BOOLEAN       │
-               │ FK  report_id   INT (nullable)│
-               │     created_at  DATETIME      │
-               └───────────────────────────────┘
+             ▼
+┌──────────────────────────────────┐
+│           CITIZENS               │
+├──────────────────────────────────┤
+│ PK  id              BIGINT       │
+│     full_name       VARCHAR(100) │
+│ UQ  phone           VARCHAR(20)  │
+│     email           VARCHAR(100) │
+│     barangay        VARCHAR(100) │
+│     pin_hash        VARCHAR(255) │
+│     avatar_url      TEXT         │
+│     created_at      TIMESTAMP    │
+│     updated_at      TIMESTAMP    │
+└────────────┬─────────────────────┘
+             │ 1
+             │ submits
+             │ N
+             ▼
+┌──────────────────────────────────┐     ┌────────────────────────────────┐
+│         CITIZEN_REPORTS          │     │       GOVERNMENT_OFFICES       │
+├──────────────────────────────────┤     ├────────────────────────────────┤
+│ PK  id              BIGINT       │     │ PK  id           BIGINT        │
+│ UQ  reference_no    VARCHAR(20)  │     │     name         VARCHAR(100)  │
+│     category        VARCHAR(50)  │     │     abbreviation VARCHAR(20)   │
+│     issue           VARCHAR(100) │     │     handles_list JSON          │
+│     description     TEXT         │     │     contact_number VARCHAR(20) │
+│     address         TEXT         │     │     email        VARCHAR(100)  │
+│     purok           VARCHAR(50)  │     │     address      TEXT          │
+│     barangay        VARCHAR(100) │     │     is_active     BOOLEAN      │
+│     city            VARCHAR(100) │     │     created_at   TIMESTAMP     │
+│     province        VARCHAR(100) │     └───────────────┬────────────────┘
+│     landmark        TEXT         │                     │ 1
+│     lat             DECIMAL(10,8)│                     │ N
+│     lng             DECIMAL(11,8)│                     │
+│     severity        VARCHAR(20)  │◄────────────────────┘
+│     status          VARCHAR(50)  │  assigned_office_id FK
+│     photo_url       TEXT         │
+│     is_validated    BOOLEAN      │
+│ FK  citizen_id      BIGINT       │
+│ FK  assigned_office_id BIGINT    │
+│     assigned_at     TIMESTAMP    │
+│     resolved_at     TIMESTAMP    │
+│     resolution_note TEXT         │
+│     rejection_note  TEXT         │
+│     created_at      TIMESTAMP    │
+│     updated_at      TIMESTAMP    │
+└──────┬──────┬──────┬─────────────┘
+       │      │      │
+       │ 1    │ 1    │ 1
+       │      │      │
+       │ N    │ N    │ N
+       ▼      ▼      ▼
+┌──────────┐ ┌─────────────────────┐ ┌────────────────────────────────┐
+│OTP_CODES │ │  REPORT_ACTIVITIES  │ │    CITIZEN_NOTIFICATIONS       │
+├──────────┤ ├─────────────────────┤ ├────────────────────────────────┤
+│PK id     │ │ PK  id    BIGINT    │ │ PK  id           BIGINT        │
+│   phone  │ │ FK  report_id       │ │ FK  citizen_id   BIGINT        │
+│   code   │ │     title   VARCHAR │ │ FK  report_id    BIGINT        │
+│   used   │ │     description TEXT│ │     reference_no VARCHAR       │
+│   expires│ │     status  VARCHAR │ │     title        VARCHAR       │
+│   _at    │ │     created_at      │ │     message      TEXT          │
+└──────────┘ └─────────────────────┘ │     status       VARCHAR       │
+                                     │     is_read      BOOLEAN       │
+┌────────────────────────────────┐   │     created_at   TIMESTAMP     │
+│         ANNOUNCEMENTS          │   └────────────────────────────────┘
+├────────────────────────────────┤
+│ PK  id           BIGINT        │
+│     title        VARCHAR(255)  │
+│     body         TEXT          │
+│     is_published BOOLEAN       │
+│     created_at   TIMESTAMP     │
+│     updated_at   TIMESTAMP     │
+└────────────────────────────────┘
 ```
 
 ### ERD Relationships Summary
 
 | Relationship | Cardinality | Description |
 |---|---|---|
-| USERS → REPORTS (submitted_by) | 1 : N | One citizen submits many reports |
-| USERS → REPORTS (assigned_to_office) | 1 : N | One office user handles many reports |
-| REPORTS → REPORT_PHOTOS | 1 : N | One report has before + after photos |
-| REPORTS → REPORT_TIMELINE | 1 : N | One report has many timeline events |
-| REPORTS → REPORT_ASSIGNMENTS | 1 : N | One report can be reassigned |
-| REPORTS → NOTIFICATIONS | 1 : N | One report triggers many notifications |
-| USERS → NOTIFICATIONS | 1 : N | One user receives many notifications |
-| CATEGORIES → REPORTS | 1 : N | One category classifies many reports |
-| BARANGAYS → REPORTS | 1 : N | One barangay has many reports |
-
----
+| CITIZENS → CITIZEN_REPORTS | 1 : N | One citizen submits many reports |
+| GOVERNMENT_OFFICES → CITIZEN_REPORTS | 1 : N | One office handles many reports |
+| CITIZEN_REPORTS → REPORT_ACTIVITIES | 1 : N | One report has many activity log entries |
+| CITIZENS → CITIZEN_NOTIFICATIONS | 1 : N | One citizen receives many notifications |
+| CITIZEN_REPORTS → CITIZEN_NOTIFICATIONS | 1 : N | One report triggers many notifications |
+| CITIZENS → OTP_CODES | 1 : N (via phone) | One phone number can have multiple OTP attempts |
 
 ---
 
 ## 3. Data Flow Diagram (DFD)
 
----
-
 ### Level 0 — Context Diagram
 
-> Shows CIVILWATCH as a single process and all external entities that interact with it.
-
 ```
-                        ┌──────────────────┐
-                        │     CITIZEN      │
-                        │  (Mobile/Web)    │
-                        └────────┬─────────┘
-                                 │  Report Submission (title, description,
-                                 │  photo, GPS coordinates, category)
-                                 │
-                                 ▼
-┌─────────────┐     Report Status Updates      ┌─────────────────────────────┐
-│ SUPER ADMIN │ ──────────────────────────────► │                             │
-│             │ ◄── Reports, Analytics,         │        CIVILWATCH           │
-│             │      User Data, Notifications   │                             │
-│             │                                 │  Geotagged Community        │
-│    CEO      │ ──── Assigned Reports ────────► │  Incident Reporting System  │
-│             │ ◄── Progress Updates,           │                             │
-│             │      Notifications              │                             │
-│             │                                 │                             │
-│   CENRO     │ ──── Assigned Reports ────────► │                             │
-│             │ ◄── Progress Updates,           └──────────────┬──────────────┘
-│             │      Notifications                             │
-└─────────────┘                                                │
-                                                               │  Store/Retrieve
-                                                               │  Images
-                                                               ▼
-                                                  ┌────────────────────────┐
-                                                  │   CLOUDINARY CDN       │
-                                                  │  (External Storage)    │
-                                                  └────────────────────────┘
+                     ┌──────────────────┐
+                     │     CITIZEN      │
+                     │  (Flutter App)   │
+                     └────────┬─────────┘
+                              │  Report Submission
+                              │  (category, concern, photo,
+                              │   GPS coords, description, severity)
+                              │
+                              ▼
+┌─────────────┐   Report status updates    ┌──────────────────────────────┐
+│ SUPER ADMIN │ ─────────────────────────► │                              │
+│             │ ◄── Reports, Analytics,    │        CIVILWATCH            │
+│             │      Notifications         │                              │
+│             │                            │  Geotagged Community         │
+│    CEO      │ ──── Assigned Reports ───► │  Incident Reporting System   │
+│             │ ◄── Progress Updates,      │                              │
+│             │      Notifications         │  Laravel 12 + MySQL          │
+│             │                            │                              │
+│   CENRO     │ ──── Assigned Reports ───► │                              │
+│             │ ◄── Progress Updates,      └──────────────┬───────────────┘
+│             │      Notifications                        │
+└─────────────┘                                           │  Store/Retrieve
+                                                          │  Photos
+                                                          ▼
+                                               ┌────────────────────────┐
+                                               │   Laravel Storage      │
+                                               │   (local / future S3)  │
+                                               └────────────────────────┘
 ```
-
----
 
 ### Level 1 — System DFD
 
-> Expands CIVILWATCH into its major processes.
-
 ```
-CITIZEN ──── submit report + photo ───────────► ┌─────────────────────────┐
-                                                 │  P1: Report Submission  │
-                                ◄─ reference_no ─┤  & Validation           │
-                                                 └──────────┬──────────────┘
-                                                            │ store report data
-                                                            ▼
-                                                    ┌───────────────┐
-            ┌────────────────────────────────────── │  D1: REPORTS  │
-            │                                       └───────┬───────┘
-            ▼                                               │
- ┌──────────────────────┐                                   │
- │  P2: Admin Review    │ ◄── retrieve pending reports ─────┘
- │  & Assignment        │
- │  (Super Admin)       │ ──── assign to office ────────────► ┌──────────────────┐
- └──────────┬───────────┘                                     │ D2: ASSIGNMENTS  │
-            │ update status                                   └──────────────────┘
-            ▼
-    ┌───────────────┐
-    │  D1: REPORTS  │ (status: assigned)
-    └───────┬───────┘
-            │
-            ▼
- ┌──────────────────────┐ ◄── retrieve assigned reports
- │  P3: Office Report   │
- │  Management          │ (CEO or CENRO)
- │  (Update/Resolve)    │ ──── upload after photo ──────────► ┌──────────────────┐
- └──────────┬───────────┘                                     │ D3: CLOUDINARY   │
-            │ update status, insert timeline                  └──────────────────┘
-            ▼
-    ┌───────────────┐       ┌─────────────────────┐
-    │  D1: REPORTS  │ ───── │ D4: REPORT_TIMELINE │
-    └───────┬───────┘       └─────────────────────┘
-            │
-            ▼
- ┌──────────────────────┐ ◄── retrieve all data
- │  P4: Analytics &     │
- │  Reporting           │ ──── analytics charts ──────────── ► SUPER ADMIN / CEO / CENRO
- └──────────────────────┘ ──── map pins (lat/lng/status) ──── ► ALL PORTALS (Leaflet)
+CITIZEN ──── submit report + photo ──────────────► ┌──────────────────────────┐
+                                                    │  P1: Report Submission   │
+                             ◄── reference_no ──────┤  & Validation            │
+                                                    └──────────┬───────────────┘
+                                                               │ store report
+                                                               ▼
+                                                       ┌───────────────────┐
+         ┌─────────────────────────────────────────── │  D1: CITIZEN_     │
+         │                                             │      REPORTS      │
+         ▼                                             └───────┬───────────┘
+┌──────────────────────┐                                       │
+│  P2: Admin Review    │ ◄── retrieve pending reports ─────────┘
+│  & Assignment        │
+│  (Super Admin)       │ ──── assign to office ──────────────► ┌───────────────────┐
+└──────────┬───────────┘                                       │ D2: GOVERNMENT_   │
+           │ update status                                     │     OFFICES       │
+           ▼                                                   └───────────────────┘
+   ┌───────────────────┐
+   │  D1: CITIZEN_     │ (status: Assigned to Office)
+   │      REPORTS      │
+   └───────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐ ◄── retrieve assigned reports
+│  P3: Office Report   │
+│  Management          │ (CEO or CENRO)
+│  (Update/Resolve)    │ ──── upload after photo ────────────► ┌───────────────────┐
+└──────────┬───────────┘                                       │ D3: LARAVEL       │
+           │ update status, log activity                       │     STORAGE       │
+           ▼                                                   └───────────────────┘
+   ┌───────────────────┐      ┌──────────────────────────┐
+   │  D1: CITIZEN_     │ ──── │  D4: REPORT_ACTIVITIES   │
+   │      REPORTS      │      └──────────────────────────┘
+   └───────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐ ◄── retrieve all data
+│  P4: Analytics &     │
+│  Reporting           │ ──── stats/charts ──────────────────► SUPER ADMIN / CEO / CENRO
+└──────────────────────┘ ──── map pins (lat/lng/status) ──────► ALL PORTALS (Leaflet / flutter_map)
 
+┌──────────────────────┐ ◄── triggered by P2 / P3 status changes
+│  P5: Notification    │
+│  Engine              │ ──── citizen notifications ─────────► D5: CITIZEN_NOTIFICATIONS
+│  (CitizenReport::    │                                        └──► Flutter app
+│   transitionTo())    │
+└──────────────────────┘
 
- ┌──────────────────────┐ ◄── triggered by P2 / P3 status changes
- │  P5: Notification    │
- │  Engine              │ ──── push notifications ───────────► D5: NOTIFICATIONS
- └──────────────────────┘                                      └──► SUPER ADMIN / OFFICES
-
-
- ┌──────────────────────┐
- │  P6: User            │ ◄── SUPER ADMIN manages users
- │  Management          │ ──── store/update ─────────────────► D6: USERS
- └──────────────────────┘
+┌──────────────────────┐
+│  P6: User            │ ◄── SUPER ADMIN manages staff
+│  Management          │ ──── store/update ──────────────────► D6: USERS
+└──────────────────────┘
 ```
-
-**Data Stores Summary**
-
-| ID | Store | Contents |
-|----|-------|---------|
-| D1 | REPORTS | All incident report records |
-| D2 | ASSIGNMENTS | Office assignment records |
-| D3 | CLOUDINARY | Before/after photo URLs |
-| D4 | REPORT_TIMELINE | Status change audit trail |
-| D5 | NOTIFICATIONS | User notification queue |
-| D6 | USERS | System user accounts |
-
----
 
 ### Level 2 — Report Submission Sub-process (P1 Exploded)
 
 ```
-CITIZEN
+CITIZEN (Flutter App)
   │
-  │  title, description, category,
-  │  barangay, lat, lng, photo file
+  │  POST /api/mobile/reports
+  │  category, issue, description, lat, lng,
+  │  barangay, severity, photo (multipart)
   ▼
 ┌────────────────────────────────┐
-│  P1.1: Validate Input Fields   │ ──── missing fields ────► return validation error
+│  P1.1: Validate Input Fields   │ ──── missing/invalid ──► return 422 validation error
 └───────────────┬────────────────┘
-                │ valid data
+                │ valid
                 ▼
 ┌────────────────────────────────┐
-│  P1.2: Upload Photo to         │ ──── image binary ──────► CLOUDINARY
-│        Cloudinary              │ ◄─── secure_url,
-└───────────────┬────────────────┘       public_id
+│  P1.2: Upload Photo to         │ ──── image file ────────► Laravel Storage
+│        Laravel Storage         │ ◄─── storage path
+└───────────────┬────────────────┘
                 │
                 ▼
 ┌────────────────────────────────┐
 │  P1.3: Generate Reference No.  │
-│        (CW-YYYY-XXXXX)         │
+│        CW-{YEAR}-{XXXXX}       │
+│        (server-side, sequential│
+│         per year, zero-padded) │
 └───────────────┬────────────────┘
                 │
                 ▼
 ┌────────────────────────────────┐
-│  P1.4: Save Report to DB       │ ──── write ─────────────► D1: REPORTS
-│        (status = pending)      │
+│  P1.4: Save to citizen_reports │ ──── INSERT ────────────► D1: CITIZEN_REPORTS
+│        status = Pending        │      (status = 'Pending Validation')
+│        Validation              │
 └───────────────┬────────────────┘
                 │
                 ▼
 ┌────────────────────────────────┐
-│  P1.5: Save Photo Record       │ ──── write ─────────────► D3: REPORT_PHOTOS
-│        (type = before)         │
+│  P1.5: Create Activity Entry   │ ──── INSERT ────────────► D4: REPORT_ACTIVITIES
+│        "Concern Submitted"     │      (title, description, status, timestamp)
 └───────────────┬────────────────┘
                 │
                 ▼
 ┌────────────────────────────────┐
-│  P1.6: Insert Timeline Entry   │ ──── write ─────────────► D4: REPORT_TIMELINE
-│        (action = submitted)    │
+│  P1.6: Send Citizen            │ ──── INSERT ────────────► D5: CITIZEN_NOTIFICATIONS
+│        Notification            │      ("Concern Submitted")
 └───────────────┬────────────────┘
                 │
                 ▼
-             Reference No.
-             returned to CITIZEN
+             Return reference_no + report data
+             to Flutter app
 ```
-
----
 
 ### Level 2 — Report Management Sub-process (P3 Exploded)
 
 ```
-CEO / CENRO
+CEO / CENRO (Admin Web or API)
   │
   │  Open assigned report
   ▼
 ┌────────────────────────────────┐
-│  P3.1: Retrieve Report Details │ ◄──── read ─────────────── D1: REPORTS
-│        + Timeline + Photos     │ ◄──── read ─────────────── D4: REPORT_TIMELINE
+│  P3.1: Retrieve Report Details │ ◄──── READ ─────────── D1: CITIZEN_REPORTS
+│        + Activities + Office   │ ◄──── READ ─────────── D4: REPORT_ACTIVITIES
 └───────────────┬────────────────┘
                 │
                 ▼
 ┌────────────────────────────────┐
 │  P3.2: Update Progress         │
-│        (add notes, set status) │ ──── update ────────────► D1: REPORTS
-└───────────────┬────────────────┘ ──── insert ────────────► D4: REPORT_TIMELINE
-                │
+│        (status + notes)        │
+│        via transitionTo()      │ ──── UPDATE ────────── D1: CITIZEN_REPORTS
+└───────────────┬────────────────┘ ──── INSERT ────────── D4: REPORT_ACTIVITIES
+                │                  ──── INSERT ────────── D5: CITIZEN_NOTIFICATIONS
          [if resolving]
                 │
                 ▼
 ┌────────────────────────────────┐
-│  P3.3: Upload After Photo      │ ──── image binary ──────► CLOUDINARY
-│                                │ ◄─── secure_url
+│  P3.3: Upload After Photo      │ ──── image file ──────► Laravel Storage
+│                                │ ◄─── storage path
 └───────────────┬────────────────┘
                 │
                 ▼
 ┌────────────────────────────────┐
-│  P3.4: Save After Photo Record │ ──── write ─────────────► D3: REPORT_PHOTOS
-│        (type = after)          │
-└───────────────┬────────────────┘
-                │
+│  P3.4: Set Status = Resolved   │ ──── UPDATE ────────── D1: CITIZEN_REPORTS
+│        resolution_note saved   │ ──── INSERT ────────── D4: REPORT_ACTIVITIES
+└───────────────┬────────────────┘ ──── INSERT ────────── D5: CITIZEN_NOTIFICATIONS
+                │                       (to citizen: "Your report is resolved")
                 ▼
-┌────────────────────────────────┐
-│  P3.5: Set Status = Resolved   │ ──── update ────────────► D1: REPORTS
-└───────────────┬────────────────┘ ──── insert ────────────► D4: REPORT_TIMELINE
-                │
-                ▼
-┌────────────────────────────────┐
-│  P3.6: Trigger Notification    │ ──── insert ────────────► D5: NOTIFICATIONS
-│        to Super Admin          │        (for super_admin user)
-└────────────────────────────────┘
+           Citizen sees "Resolved"
+           in Flutter Track Report
 ```
-
----
 
 ---
 
@@ -417,231 +434,197 @@ CEO / CENRO
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                         CIVILWATCH SYSTEM BOUNDARY                          ║
 ║                                                                              ║
-║  CITIZEN                                                                     ║
+║  CITIZEN (Flutter Mobile App)                                                ║
 ║  ┌──────┐                                                                    ║
-║  │  👤  │─────────────── (UC01) Submit Incident Report ────────────────────  ║
-║  │      │─────────────── (UC02) Upload Incident Photo ─────────────────────  ║
-║  │      │─────────────── (UC03) View Report Status ────────────────────────  ║
+║  │  👤  │─────── (UC01) Register with Phone + 6-digit PIN ─────────────────  ║
+║  │      │─────── (UC02) Login with Phone + OTP ────────────────────────────  ║
+║  │      │─────── (UC03) Submit Incident Report (5-step wizard) ────────────  ║
+║  │      │─────── (UC04) Upload Incident Photo ──────────────────────────────  ║
+║  │      │─────── (UC05) Use GPS / Pick Location on Map ──────────────────── ║
+║  │      │─────── (UC06) View My Reports ─────────────────────────────────── ║
+║  │      │─────── (UC07) Track Report Status ─── «include» (UC15) ──────────  ║
+║  │      │─────── (UC08) View Community Map ──────────────────────────────── ║
+║  │      │─────── (UC09) Receive Notifications ───────────────────────────── ║
+║  │      │─────── (UC10) View City Announcements ─────────────────────────── ║
 ║  └──────┘                                                                    ║
 ║                                                                              ║
-║  SUPER ADMIN                                                                 ║
+║  SUPER ADMIN (Web Dashboard)                                                 ║
 ║  ┌──────┐                                                                    ║
-║  │  👤  │─────────────── (UC04) Login to System ──────────────────────────  ║
-║  │      │─────────────── (UC05) View Dashboard ────────────────────────────  ║
-║  │      │─────────────── (UC06) View Pending Reports ───────────────────────  ║
-║  │      │─────────────── (UC07) Validate Report (Approve/Reject) ──────────  ║
-║  │      │─────────────── (UC08) Assign Report to Office ────────────────────  ║
-║  │      │─────────────── (UC09) Monitor All Reports ────────────────────────  ║
-║  │      │─────────────── (UC10) View GIS Map ─────────── «include» (UC23)    ║
-║  │      │─────────────── (UC11) View Analytics & Charts ─────────────────── ║
-║  │      │─────────────── (UC12) Manage Users ───────────────────────────────  ║
-║  │      │─────────────── (UC13) Manage System Settings ──────────────────── ║
-║  │      │─────────────── (UC14) Receive Notifications ───────────────────── ║
+║  │  👤  │─────── (UC11) Login (email + password) ───────────────────────── ║
+║  │      │─────── (UC12) View Dashboard ──────────────────────────────────── ║
+║  │      │─────── (UC13) View Pending Reports ────────────────────────────── ║
+║  │      │─────── (UC14) Validate Report (Approve/Reject) ─────────────────  ║
+║  │      │─────── (UC15) Assign Report to Office ─────────────────────────── ║
+║  │      │─────── (UC16) Monitor All Reports ─────────────────────────────── ║
+║  │      │─────── (UC17) View GIS Map ─────────── «include» (UC25) ─────────  ║
+║  │      │─────── (UC18) View Analytics & Charts ─────────────────────────── ║
+║  │      │─────── (UC19) Manage Staff Users ──────────────────────────────── ║
+║  │      │─────── (UC20) Manage System Settings ──────────────────────────── ║
+║  │      │─────── (UC21) Manage Announcements ────────────────────────────── ║
+║  │      │─────── (UC22) Receive Notifications ───────────────────────────── ║
 ║  └──────┘                                                                    ║
 ║                                                                              ║
-║  CEO (City Engineering Office)                                               ║
+║  CEO (City Engineering Office — Web Dashboard)                               ║
 ║  ┌──────┐                                                                    ║
-║  │  👤  │─────────────── (UC04) Login to System                              ║
-║  │      │─────────────── (UC15) View CEO Dashboard ─────────────────────── ║
-║  │      │─────────────── (UC16) View Assigned Reports ───────────────────── ║
-║  │      │─────────────── (UC17) View Report Details ─────────────────────── ║
-║  │      │─────────────── (UC18) Update Report Progress ──────────────────── ║
-║  │      │─────────────── (UC19) Upload After/Resolution Photo ──────────── ║
-║  │      │─────────────── (UC20) Resolve Report ─────── «include» (UC19)     ║
-║  │      │─────────────── (UC21) View CEO Map ──────────«include» (UC23)     ║
-║  │      │─────────────── (UC22) View CEO Analytics ──────────────────────── ║
-║  │      │─────────────── (UC14) Receive Notifications ───────────────────── ║
+║  │  👤  │─────── (UC11) Login (email + password)                             ║
+║  │      │─────── (UC23) View CEO Dashboard ─────────────────────────────── ║
+║  │      │─────── (UC24) View Assigned Infrastructure Reports ──────────────  ║
+║  │      │─────── (UC25) View Report on Leaflet Map ───────────────────────── ║
+║  │      │─────── (UC26) Update Report Progress ──────────────────────────── ║
+║  │      │─────── (UC27) Upload After/Resolution Photo ────────────────────  ║
+║  │      │─────── (UC28) Resolve Report ───── «include» (UC27) ────────────  ║
+║  │      │─────── (UC22) Receive Notifications ───────────────────────────── ║
 ║  └──────┘                                                                    ║
 ║                                                                              ║
-║  CENRO                                                                       ║
-║  ┌──────┐                                                                    ║
-║  │  👤  │─────────────── (UC04) Login to System                              ║
-║  │      │─────────────── (UC15) View CENRO Dashboard ─────────────────────  ║
-║  │      │─────────────── (UC16) View Assigned Reports ───────────────────── ║
-║  │      │─────────────── (UC17) View Report Details ─────────────────────── ║
-║  │      │─────────────── (UC18) Update Report Progress ──────────────────── ║
-║  │      │─────────────── (UC19) Upload After/Resolution Photo ──────────── ║
-║  │      │─────────────── (UC20) Resolve Report ─────── «include» (UC19)     ║
-║  │      │─────────────── (UC21) View CENRO Map ────────«include» (UC23)     ║
-║  │      │─────────────── (UC22) View CENRO Analytics ──────────────────────  ║
-║  │      │─────────────── (UC14) Receive Notifications ───────────────────── ║
+║  CENRO (City Environment & Natural Resources Office — Web Dashboard)         ║
+║  ┌──────┐  (Same use cases as CEO, scoped to environmental reports)          ║
+║  │  👤  │─────── (UC11), (UC23)–(UC28), (UC22) ──────────────────────────── ║
 ║  └──────┘                                                                    ║
 ║                                                                              ║
-║  SHARED USE CASES (system-level)                                             ║
-║  (UC23) Display Leaflet Map with Geotagged Pins                              ║
-║  (UC24) Export Reports (CSV / PDF)                        «extend» of list  ║
-║  (UC25) Toggle Dark Mode                                  all portal users  ║
-║  (UC26) Logout                                            all logged-in     ║
+║  SHARED / SYSTEM USE CASES                                                   ║
+║  (UC25) Display Map with Geotagged Pins  — all portals (Leaflet / flutter_map)║
+║  (UC29) Toggle Dark Mode                 — web admin all roles               ║
+║  (UC30) Logout                           — all authenticated users           ║
+║  (UC31) Export Reports (CSV)             — Super Admin (future)              ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
-
----
 
 ### Actors
 
 | Actor | Type | Description |
 |---|---|---|
-| Citizen | External Primary | Submits geotagged incident reports via mobile/web |
+| Citizen | External Primary | Submits geotagged incident reports via Flutter mobile app |
 | Super Admin | Internal Primary | Validates reports, assigns offices, manages users and system |
 | CEO | Internal Primary | Handles infrastructure reports assigned by Super Admin |
 | CENRO | Internal Primary | Handles environmental reports assigned by Super Admin |
-| Cloudinary | External Secondary | Stores uploaded photos and serves CDN URLs |
-| MySQL Database | Internal Secondary | Persists all system data |
-
----
-
-### Use Case Descriptions
-
-#### UC01 — Submit Incident Report
-
-| Field | Detail |
-|---|---|
-| Actor | Citizen |
-| Precondition | Citizen has internet access and GPS enabled |
-| Main Flow | 1. Citizen opens app → 2. Fills form (title, description, category, barangay) → 3. GPS auto-captures coordinates → 4. Uploads photo → 5. Submits → 6. System returns reference number |
-| Alternate Flow | If GPS unavailable → Citizen manually pins location on map |
-| Postcondition | Report saved with status = **Pending**, notification sent to Super Admin |
-
-#### UC07 — Validate Report
-
-| Field | Detail |
-|---|---|
-| Actor | Super Admin |
-| Precondition | Report exists with status = Pending |
-| Main Flow | 1. Admin opens Pending Reports → 2. Views report details + photo + map → 3. Clicks Approve or Reject → 4. Adds notes → 5. Confirms |
-| Alternate Flow | Reject: report status set to Rejected, citizen notified |
-| Postcondition | Status = **Assigned** (if approved), timeline updated |
-
-#### UC08 — Assign Report to Office
-
-| Field | Detail |
-|---|---|
-| Actor | Super Admin |
-| Precondition | Report status = Pending or Approved |
-| Main Flow | 1. Admin selects office (CEO/CENRO) → 2. Sets priority → 3. Adds notes → 4. Confirms assignment |
-| Postcondition | Report status = **Assigned**, office notified, assignment record created |
-
-#### UC20 — Resolve Report
-
-| Field | Detail |
-|---|---|
-| Actor | CEO / CENRO |
-| Precondition | Report status = In Progress or For Resolution |
-| Main Flow | 1. Office opens report → 2. Uploads after photo (UC19) → 3. Adds resolution notes → 4. Clicks Resolve → 5. Confirms |
-| Postcondition | Status = **Resolved**, Super Admin notified, timeline updated |
-
----
+| Laravel Storage | Internal Secondary | Stores uploaded photos (before/after) |
+| MySQL Database | Internal Secondary | Persists all system data via Eloquent |
 
 ---
 
 ## 5. Report Status State Diagram
 
 ```
-                        ┌───────────────┐
-     Citizen submits    │               │
-     ─────────────────► │    PENDING    │
-                        │               │
-                        └──────┬────────┘
-                               │
-              ┌────────────────┼──────────────────┐
-              │                │                  │
-        Admin Rejects    Admin Approves            │
-              │           & Assigns                │
-              ▼                ▼                   │
-       ┌──────────┐     ┌────────────┐             │
-       │ REJECTED │     │  ASSIGNED  │             │
-       └──────────┘     └─────┬──────┘             │
-                              │                    │
-                     Office Starts Work             │
-                              │                    │
-                              ▼                    │
-                       ┌────────────┐              │
-                       │ IN PROGRESS│              │
-                       └─────┬──────┘              │
-                             │                     │
-                    Office Marks For Review         │
-                             │                     │
-                             ▼                     │
-                    ┌─────────────────┐            │
-                    │ FOR RESOLUTION  │            │
-                    └────────┬────────┘            │
-                             │                     │
-                    Office Resolves + After Photo   │
-                             │                     │
-                             ▼                     │
-                       ┌──────────┐                │
-                       │ RESOLVED │ ◄──────────────┘
-                       └──────────┘    (Admin can also
-                                        directly resolve)
+                     ┌─────────────────┐
+  Citizen submits    │                 │
+  ─────────────────► │    PENDING      │
+  (via Flutter app)  │   VALIDATION    │
+                     └──────┬──────────┘
+                            │
+             ┌──────────────┼──────────────────┐
+             │              │                  │
+       Admin Rejects   Admin Validates          │
+             │         & Assigns               │
+             ▼              ▼                  │
+      ┌──────────┐   ┌─────────────────┐       │
+      │ REJECTED │   │  ASSIGNED TO    │       │
+      └──────────┘   │    OFFICE       │       │
+                     └────────┬────────┘       │
+                              │                │
+                     Office Starts Work        │
+                              │                │
+                              ▼                │
+                       ┌─────────────┐         │
+                       │ IN PROGRESS │         │
+                       └──────┬──────┘         │
+                              │                │
+                    Office Uploads After Photo  │
+                    + Adds Resolution Notes     │
+                              │                │
+                              ▼                │
+                       ┌──────────┐            │
+                       │ RESOLVED │ ◄──────────┘
+                       └──────────┘   (Admin can also
+                                       directly resolve)
+
+Each transition via CitizenReport::transitionTo() automatically:
+  1. Updates status column
+  2. Creates a ReportActivity log entry
+  3. Sends a CitizenNotification to the report owner
 
 Status Colors:
-  PENDING        → Amber    #F59E0B
-  ASSIGNED       → Blue     #1A56DB
-  IN PROGRESS    → Orange   #F97316
-  FOR RESOLUTION → Yellow   #EAB308
-  RESOLVED       → Green    #10B981
-  REJECTED       → Red      #EF4444
+  PENDING VALIDATION  → Amber   #F59E0B  (web) / #F59E0B  (app)
+  ASSIGNED TO OFFICE  → Blue    #1A56DB  (web) / #2563EB  (app)
+  IN PROGRESS         → Orange  #F97316  (web) / #EA580C  (app)
+  RESOLVED            → Green   #10B981  (web) / #16A34A  (app)
+  REJECTED            → Red     #EF4444  (web) / #DC2626  (app)
 ```
 
 ---
 
 ## 6. Report Categories
 
-### Infrastructure — handled by City Engineering Office (CEO)
+### Infrastructure — City Engineering Office (CEO)
 
 | # | Category | Description |
 |---|---|---|
-| 1 | Road Repair | Road needs repair, patching, compaction, shouldering, or surface work. Citizen describes specifics. |
-| 2 | Road Graveling | Gravel road needs re-graveling or new gravel application. |
-| 3 | Streetlight / Light Pole Concern | Streetlight or light pole needs repair, replacement, or is a new installation request. Citizen describes specifics. |
-| 4 | Blocked Canal | Canal is clogged or blocked, causing drainage or flooding issues. |
-| 5 | Others | Other infrastructure concerns not covered by the categories above. |
+| 1 | Road Repair | Potholes, damaged road surface needing repair, patching, or compaction |
+| 2 | Road Graveling | Unpaved or gravel road needs re-graveling or new gravel application |
+| 3 | Streetlight / Light Pole Concern | Broken, flickering, missing streetlight — repair or replacement |
+| 4 | Blocked Canal | Canal clogged by debris or sediment, causing drainage issues |
+| 5 | Others | Other infrastructure concerns not covered by the categories above |
 
-### Environmental — handled by CENRO
+### Environmental — CENRO
 
 | # | Category | Description |
 |---|---|---|
-| 1 | Illegal Dumping | Large amount of garbage illegally dumped in an unauthorized public or private space. |
-| 2 | Garbage Collection | Garbage collection request or missed scheduled pickup in the area. |
+| 1 | Illegal Dumping | Large amounts of garbage illegally dumped in public or private space |
+| 2 | Garbage Collection | Missed scheduled pickup or garbage collection request |
 
 **Total: 7 categories** (5 Infrastructure + 2 Environmental)
 
 ---
 
-## 7. Technology Stack Summary
+## 7. Technology Stack
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CIVILWATCH TECH STACK                        │
-├─────────────────────┬───────────────────────────────────────────┤
-│ Layer               │ Technology                                │
-├─────────────────────┼───────────────────────────────────────────┤
-│ Frontend            │ HTML5, CSS3, Vanilla JavaScript           │
-│ Maps                │ Leaflet.js + OpenStreetMap tiles          │
-│ Charts              │ Chart.js                                  │
-│ Icons               │ Material Symbols (Google)                 │
-├─────────────────────┼───────────────────────────────────────────┤
-│ Backend Runtime     │ Node.js v20+                              │
-│ Backend Framework   │ Express.js                                │
-│ Real-time           │ Socket.io                                 │
-├─────────────────────┼───────────────────────────────────────────┤
-│ Database            │ MySQL 8.0                                 │
-│ ORM                 │ Sequelize                                 │
-├─────────────────────┼───────────────────────────────────────────┤
-│ Authentication      │ JWT (httpOnly cookies) + bcrypt           │
-│ Authorization       │ RBAC Middleware (role-based)              │
-├─────────────────────┼───────────────────────────────────────────┤
-│ Image Storage       │ Cloudinary                                │
-│ Upload Middleware   │ Multer + multer-storage-cloudinary        │
-├─────────────────────┼───────────────────────────────────────────┤
-│ Hosting – Backend   │ Railway / Render                          │
-│ Hosting – DB        │ Railway MySQL / PlanetScale               │
-│ Hosting – Frontend  │ Netlify / Express static serve            │
-├─────────────────────┼───────────────────────────────────────────┤
-│ Dev Tools           │ Postman, TablePlus, nodemon, PM2, dotenv  │
-└─────────────────────┴───────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                    CIVILWATCH TECH STACK                         │
+├──────────────────────────┬───────────────────────────────────────┤
+│ Layer                    │ Technology                            │
+├──────────────────────────┼───────────────────────────────────────┤
+│ Admin Web Frontend       │ HTML5, CSS3, Vanilla JavaScript       │
+│ Admin Maps               │ Leaflet.js + OpenStreetMap tiles      │
+│ Admin Charts             │ Chart.js                              │
+│ Admin Icons              │ Material Symbols (Google)             │
+├──────────────────────────┼───────────────────────────────────────┤
+│ Citizen Mobile App       │ Flutter / Dart (SDK ^3.12.2)          │
+│ App Maps                 │ flutter_map ^8.1.1 + OpenStreetMap    │
+│ App Geocoding            │ Nominatim reverse geocoding (http)    │
+│ App Fonts                │ Google Fonts — Inter + Roboto Mono    │
+│ App State Management     │ Singleton ChangeNotifier (no Bloc)    │
+├──────────────────────────┼───────────────────────────────────────┤
+│ Backend Framework        │ Laravel 12                            │
+│ Backend Language         │ PHP                                   │
+│ Backend Auth             │ Laravel Sanctum (multi-guard)         │
+│   Staff guard            │ auth:sanctum — email + password       │
+│   Citizen guard          │ auth:citizen — phone + OTP + PIN      │
+├──────────────────────────┼───────────────────────────────────────┤
+│ Database                 │ MySQL 8.0                             │
+│ ORM                      │ Eloquent (Laravel built-in)           │
+├──────────────────────────┼───────────────────────────────────────┤
+│ File Storage             │ Laravel Storage (local disk)          │
+│                          │ Future: S3 or Cloudinary              │
+├──────────────────────────┼───────────────────────────────────────┤
+│ SMS / OTP                │ Dev: OTP returned in API response     │
+│                          │ Future: Semaphore (PH SMS gateway)    │
+├──────────────────────────┼───────────────────────────────────────┤
+│ Dev Tools                │ Postman, TablePlus, Artisan CLI       │
+│ Hosting (target)         │ Local dev → shared hosting / VPS      │
+└──────────────────────────┴───────────────────────────────────────┘
 ```
+
+### Why Laravel (Not Node.js)
+
+| Consideration | Decision |
+|---|---|
+| Team experience | Team is learning PHP/Laravel — fits the capstone scope |
+| ORM | Eloquent is simple and readable for beginners |
+| Auth | Sanctum handles multi-guard (staff + citizens) out of the box |
+| Blade views | Built-in templating for admin web panel — no extra frontend build step |
+| Artisan CLI | `php artisan migrate`, `db:seed`, `serve` — minimal setup |
+| SMS | Semaphore (Philippine provider) has a simple PHP SDK |
 
 ---
 

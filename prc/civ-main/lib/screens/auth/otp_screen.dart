@@ -194,7 +194,7 @@ class _OtpScreenState extends State<OtpScreen>
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Enter the 6-digit code we sent to',
+                  'Enter the 6-digit code we sent to verify\nyour phone for registration.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     color: AppColors.textSecondary,

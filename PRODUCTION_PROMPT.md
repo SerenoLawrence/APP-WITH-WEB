@@ -1,263 +1,309 @@
 # CIVILWATCH — Production Implementation Prompt
 
-> Use this as your master prompt when starting a new session to build the production-ready version of CIVILWATCH.
+> Use this as your master prompt when starting a new session focused on backend integration or production work.
+> Last Updated: August 13, 2026
 
 ---
 
 ## The Prompt
 
 ```
-I have a fully built HTML/CSS/Vanilla JS prototype for a capstone system called CIVILWATCH — 
-a Geotagged Community Incident Reporting System for Digos City. I need to convert this 
-prototype into a production-ready full-stack web application.
+I have a fully built capstone system called CIVILWATCH —
+a Geotagged Community Incident Reporting System for Digos City.
+The project has THREE components that are all co-located in one workspace.
 
----
+─────────────────────────────────────────────────────────
+WORKSPACE LOCATION
+─────────────────────────────────────────────────────────
+c:\Users\User\Downloads\SERENO\APP-WITH-WEB\
 
-## Current Prototype Stack
+├── prc/
+│   ├── civ-main/          Flutter citizen mobile app
+│   ├── laravel/           Laravel 12 backend API
+│   └── [web admin files]  HTML/CSS/JS admin dashboard
 
-- Frontend: HTML5, CSS3, Vanilla JavaScript (27 pages across 3 portals)
-- Maps: Leaflet.js (already integrated)
-- Charts: Chart.js
-- Icons: Material Symbols
-- Data: Static JSON files (no backend yet)
-- Auth: localStorage only (no real session/token system)
+─────────────────────────────────────────────────────────
+COMPONENT 1 — ADMIN WEB DASHBOARD (Complete Prototype)
+─────────────────────────────────────────────────────────
+Location: prc/ (HTML/CSS/JS files)
+Stack: HTML5 + CSS3 + Vanilla JavaScript + Leaflet.js + Chart.js
 
----
+27 pages across 3 portals:
+- Super Admin (11 pages): login, dashboard, pending-reports,
+  report-details, assign-office, monitoring, gis-map, analytics,
+  resolved-reports, users, settings
+- CEO Office (8 pages): offices/ceo/
+- CENRO Office (8 pages): offices/cenro/
 
-## Target Production Stack
+Current limitations (prototype):
+- No backend — all data is static JSON or inline JS arrays
+- Auth is localStorage only (role stored as cw_role)
+- No data persistence — refresh resets all state
 
-### Backend
-- Runtime: Node.js
-- Framework: Express.js
-- Language: JavaScript (keep the stack consistent with the frontend)
-- Architecture: REST API (JSON responses)
+─────────────────────────────────────────────────────────
+COMPONENT 2 — CITIZEN MOBILE APP (Complete Prototype)
+─────────────────────────────────────────────────────────
+Location: prc/civ-main/
+Stack: Flutter / Dart SDK ^3.12.2
 
-### Database
-- MySQL (relational, hosted locally or on PlanetScale/Railway for deployment)
-- ORM: Sequelize (for model definitions, migrations, associations)
+18 screens built:
+- Auth: splash, login (phone+OTP), OTP verify, register (name, barangay, 6-digit PIN)
+- Home: dashboard with stats, map preview, announcements
+- Report flow (5 steps): category → concern → photo → location (GPS + Nominatim) → review
+- My Reports, Track Report, Private Map, Community Map
+- Notifications, Profile
 
-### Authentication
-- JWT (JSON Web Tokens) stored in httpOnly cookies
-- bcrypt for password hashing
-- Role-based access control: super_admin, ceo, cenro
-- Middleware to protect all API routes by role
+Current limitations (prototype):
+- ZERO backend connection — all data in-memory via AppState singleton
+- OTP is simulated with Future.delayed — no real SMS
+- Photo is a boolean flag — no real image_picker
+- GPS is simulated at fixed coordinates — no real geolocator
+- Resets completely on restart
 
-### Image Storage
-- Cloudinary (for incident photos uploaded by citizens and resolution/after photos uploaded by offices)
-- Use multer + cloudinary-storage for upload middleware
-- Store Cloudinary public_id and secure_url in the database, not binary blobs
+Dependencies in pubspec.yaml:
+- flutter_map ^8.1.1 (maps)
+- latlong2 ^0.9.1
+- google_fonts ^6.2.1
+- http ^1.2.2 (Nominatim geocoding only — real HTTP not wired to Laravel yet)
+- intl ^0.19.0
+- url_launcher ^6.3.1
 
-### Maps
-- Keep Leaflet.js on the frontend
-- Backend provides report coordinates via API (lat, lng stored in MySQL)
-- Real-time pin status updates via polling or Socket.io
+─────────────────────────────────────────────────────────
+COMPONENT 3 — LARAVEL BACKEND (Fully Built, Needs DB Setup)
+─────────────────────────────────────────────────────────
+Location: prc/laravel/
+Stack: Laravel 12, PHP, MySQL, Sanctum (multi-guard)
 
-### Frontend (Preserved)
-- Keep all existing HTML/CSS/JS pages as-is for structure and styling
-- Replace all static JSON data fetches and hardcoded arrays with fetch() calls to the REST API
-- Replace localStorage auth with JWT cookie-based auth
-- Keep dark mode, sidebar, navbar, toast, and modals intact
+Two user systems running side by side:
+  Staff/Admin: users table, email+password, auth:sanctum guard
+  Citizens:    citizens table, phone+PIN, auth:citizen guard
 
----
+Database migrations (all created):
+  citizens, otp_codes, government_offices, citizen_reports,
+  report_activities, citizen_notifications, announcements
 
-## System Roles and Access
+API routes:
+  GET  /api/ping                              Health check
+  POST /api/mobile/auth/send-otp              Generate OTP (returned in response)
+  POST /api/mobile/auth/verify-otp            Verify OTP → get Sanctum token
+  POST /api/mobile/auth/register              Register citizen
+  POST /api/mobile/auth/logout                Revoke token
+  GET  /api/mobile/auth/me                    Citizen profile
+  GET  /api/mobile/reports                    Citizen's own reports
+  POST /api/mobile/reports                    Submit report (multipart)
+  GET  /api/mobile/reports/community          Validated reports for community map
+  GET  /api/mobile/reports/{id}               Report detail + activity log
+  GET  /api/mobile/notifications              Citizen notifications
+  POST /api/mobile/notifications/mark-all-read
+  POST /api/mobile/notifications/{id}/read
+  GET  /api/mobile/announcements              Public announcements (no auth)
+  GET/POST/PUT/DELETE /api/admin/citizen-reports/{...}
+  GET/POST/PUT/DELETE /api/admin/offices
+  GET/POST/PUT/DELETE /api/admin/announcements
+  POST /api/login                             Admin email+password login
+  GET/POST/PUT/DELETE /api/reports/{...}      Legacy admin reports
+  GET  /api/analytics/{...}                   Analytics endpoints
 
-| Role | Access |
-|------|--------|
-| super_admin | Full access: validate reports, assign to offices, manage users, view all analytics |
-| ceo | City Engineering Office: view assigned infrastructure reports, update progress, resolve |
-| cenro | CENRO: view assigned environmental reports, update progress, resolve |
+Seeders:
+  DatabaseSeeder → super admin (admin@civilwatch.ph / Admin@2026!)
+  GovernmentOfficeSeeder → CEO, CENRO, CPWD, CDRRMO, CVO
+  AnnouncementSeeder → 2 sample announcements
 
----
+API response shapes match Flutter models EXACTLY:
+  CitizenReport  → Flutter IncidentReport model
+  ReportActivity → Flutter ActivityEntry model
+  CitizenNotification → Flutter AppNotification model
+  Announcement   → Flutter Announcement model
+  GovernmentOffice → Flutter GovernmentOffice model
 
-## Core Database Tables Needed
+─────────────────────────────────────────────────────────
+CURRENT INTEGRATION STATUS
+─────────────────────────────────────────────────────────
+Flutter ↔ Laravel:  NOT YET CONNECTED (0%)
+Web Admin ↔ Laravel: NOT YET CONNECTED (0%)
 
-- users (id, name, email, password_hash, role, office, avatar_url, created_at)
-- reports (id, reference_no, title, description, category, status, priority, barangay, lat, lng, submitted_by, assigned_to_office, created_at, updated_at)
-- report_photos (id, report_id, type [before/after], cloudinary_url, cloudinary_public_id, uploaded_by, created_at)
-- report_timeline (id, report_id, action, note, performed_by, created_at)
-- notifications (id, user_id, message, type, is_read, created_at)
-- report_assignments (id, report_id, assigned_to, assigned_by, priority, notes, created_at)
+The immediate goal is to:
+1. Get Laravel running (setup .env, migrate, seed, serve)
+2. Connect Flutter app to Laravel API (replace all mock/in-memory calls)
+3. Then connect web admin to Laravel API (replace static JSON)
 
----
+─────────────────────────────────────────────────────────
+REPORT CATEGORIES
+─────────────────────────────────────────────────────────
+Infrastructure (→ CEO):
+  Road Repair, Road Graveling,
+  Streetlight / Light Pole Concern, Blocked Canal, Others
 
-## Report Status Flow
+Environmental (→ CENRO):
+  Illegal Dumping, Garbage Collection
 
-Submitted → Pending → Assigned → In Progress → For Resolution → Resolved
+─────────────────────────────────────────────────────────
+REPORT STATUS FLOW
+─────────────────────────────────────────────────────────
+Submitted → Pending Validation → Assigned to Office
+→ In Progress → Resolved
 
-Each status change must:
-1. Update the reports table
-2. Insert a row into report_timeline
-3. Create a notification for the relevant user/office
+Each status change via CitizenReport::transitionTo() auto-creates:
+  1. ReportActivity log entry
+  2. CitizenNotification to report owner
 
----
+─────────────────────────────────────────────────────────
+DESIGN TOKENS
+─────────────────────────────────────────────────────────
+Web Admin:
+  Super Admin / CEO primary: #1A56DB
+  CENRO primary:             #10B981
+  Pending:                   #F59E0B
+  In Progress:               #F97316
+  Resolved:                  #10B981
+  Page background:           #F9FAFB
+  Dark background:           #161B27
 
-## API Endpoints Needed
+Flutter App:
+  Primary green:             #1B5E20
+  Navy:                      #0D2137
+  Background:                #F8FAFC
+  Pending:                   #F59E0B
+  In Progress:               #EA580C
+  Resolved:                  #16A34A
+  Assigned:                  #2563EB
 
-### Auth
-- POST /api/auth/login
-- POST /api/auth/logout
-- GET  /api/auth/me
+─────────────────────────────────────────────────────────
+PROJECT INFO
+─────────────────────────────────────────────────────────
+System:     CIVILWATCH — Geotagged Community Incident Reporting System
+Location:   Digos City, Davao del Sur
+University: University of Mindanao — Digos Branch
+Program:    BS Information Technology
+Year:       2026
+Proponents: Renz Justine Y. Borinaga,
+            Jhon Carlo Mag-Usara,
+            Lawrence Roy P. Sereno
+Adviser:    Cyvil Dave Dasargo, MIT
 
-### Reports
-- GET    /api/reports                (with filters: status, category, office, barangay, date range)
-- GET    /api/reports/:id
-- POST   /api/reports                (citizen submission with photo upload)
-- PATCH  /api/reports/:id/status
-- PATCH  /api/reports/:id/assign
-- GET    /api/reports/:id/timeline
-- POST   /api/reports/:id/photos     (Cloudinary upload for after photo)
+─────────────────────────────────────────────────────────
+SCOPE — DO NOT ADD THESE
+─────────────────────────────────────────────────────────
+❌ AI image verification
+❌ Duplicate detection
+❌ Fire incidents / disaster prediction
+❌ Crime reporting / Lost and Found
+❌ Emergency response / Hazard forecasting
 
-### Users
-- GET    /api/users
-- POST   /api/users
-- PATCH  /api/users/:id
-- DELETE /api/users/:id
-
-### Analytics
-- GET    /api/analytics/summary      (total counts by status)
-- GET    /api/analytics/trends       (monthly counts for line chart)
-- GET    /api/analytics/by-category
-- GET    /api/analytics/by-barangay
-- GET    /api/analytics/by-office
-
-### Notifications
-- GET    /api/notifications          (for logged-in user)
-- PATCH  /api/notifications/read-all
-
-### Map
-- GET    /api/map/pins               (returns id, lat, lng, status, category, title for all reports)
-
----
-
-## Citizen Mobile App Note
-
-There is a separate citizen-facing mobile app (React Native or Flutter — TBD) that submits 
-reports with geotagged photos. The backend must support unauthenticated report submission 
-via POST /api/reports with a photo upload to Cloudinary.
-
----
-
-## Pending Features to Complete During Production
-
-These were already designed in the prototype but not wired up:
-
-1. After photo upload — wire FileReader + Cloudinary upload when office resolves a report
-2. CEO and CENRO Settings pages — build out profile settings, password change, notification preferences
-3. Functional pagination — all list/table views need real limit/offset from the API
-4. Export Reports — CSV export via json2csv, PDF via pdfkit or puppeteer
-5. Analytics charts driven by real DB data — not hardcoded arrays
-6. Clickable rows on Dashboard recent reports and Resolved lists
-
----
-
-## Folder Structure (Target)
-
-/civilwatch
-  /client          ← existing prototype HTML/CSS/JS (served as static files or kept separate)
-  /server
-    /config        ← db.js, cloudinary.js, env config
-    /controllers   ← auth, reports, users, analytics, notifications, map
-    /middleware    ← auth guard (JWT verify), role check, upload (multer+cloudinary)
-    /models        ← Sequelize models: User, Report, ReportPhoto, Timeline, Notification, Assignment
-    /routes        ← express routers per resource
-    /utils         ← response helpers, status constants, date helpers
-    app.js         ← express setup, cors, cookie-parser, routes
-    server.js      ← entry point, listen
-
----
-
-## Environment Variables Needed (.env)
-
-PORT=5000
-NODE_ENV=production
-
-DB_HOST=
-DB_PORT=3306
-DB_NAME=civilwatch
-DB_USER=
-DB_PASSWORD=
-
-JWT_SECRET=
-JWT_EXPIRES_IN=7d
-COOKIE_SECURE=true
-
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-
-CLIENT_URL=https://civilwatch.digos.gov.ph
-
----
-
-## Instructions for the AI
-
-1. Start by scaffolding the /server folder structure above.
-2. Set up Express with cors, helmet, cookie-parser, morgan.
-3. Configure Sequelize with MySQL and define all models with associations.
-4. Build auth routes first (login, logout, /me) with JWT + bcrypt.
-5. Build the reports CRUD with Cloudinary photo upload middleware.
-6. Build analytics endpoints that query the DB (not hardcoded).
-7. Build the map pins endpoint.
-8. Build notifications (insert on status change, mark as read).
-9. Then update the frontend JS files to replace static data with fetch() to the API.
-10. Replace localStorage session with /api/auth/me check on page load.
-11. Wire the after photo upload on report-details.html for CEO and CENRO.
-12. Wire functional pagination on all list pages.
-13. Wire export buttons to generate CSV downloads.
-14. Add Socket.io for real-time map pin updates and notification badge refresh.
-
-Preserve all existing HTML structure, CSS classes, dark mode tokens, and component behavior. 
-Only touch the JavaScript data layer — fetch from API instead of JSON files.
+─────────────────────────────────────────────────────────
+INSTRUCTIONS FOR YOU
+─────────────────────────────────────────────────────────
+- Always read existing files before editing them
+- Match existing code style — no new libraries unless necessary
+- For Flutter: keep all colors in app_colors.dart, routes in app_routes.dart
+- For Laravel: follow existing controller/model patterns in the codebase
+- For Web: keep CSS in separate CSS files, JS in app.js/utils.js or inline
+- Build and test each step before moving to the next
+- The backend is already fully built — focus on wiring, not rebuilding
+- Refer to SESSION_PROGRESS.md for the numbered task list
 ```
 
 ---
 
-## Why Node.js + Express?
+## Laravel Setup Commands (Run Once)
 
-Node.js is the best fit for this project for these reasons:
+```bash
+# In prc/laravel/
 
-- **Same language as the frontend** — no context switching between PHP/Python and JS
-- **Express is lightweight** — full control, no magic, easy to learn for a capstone
-- **Sequelize works great with MySQL** — model definitions, migrations, associations are straightforward
-- **Excellent ecosystem** — multer, cloudinary-storage, jwt, bcrypt, socket.io, json2csv all have mature Node packages
-- **Real-time ready** — Socket.io for live map updates and notification badges is trivial to add
-- **Deployment is simple** — runs on Railway, Render, or a plain VPS with PM2
+# 1. Copy environment file
+copy .env.example .env
 
-Alternatives considered:
+# 2. Edit .env — set these values:
+#    DB_CONNECTION=mysql
+#    DB_HOST=127.0.0.1
+#    DB_PORT=3306
+#    DB_DATABASE=civilwatch
+#    DB_USERNAME=root
+#    DB_PASSWORD=your_mysql_password
 
-| Option | Why Not |
-|--------|---------|
-| PHP/Laravel | Different language from the frontend, heavier for a capstone team |
-| Python/Django | Different language, ORM style is more opinionated |
-| Python/FastAPI | Good but adds Python to a JS-only team |
-| Firebase | No MySQL, vendor lock-in, harder to document for panel defense |
+# 3. Install dependencies
+composer install
+
+# 4. Generate app key
+php artisan key:generate
+
+# 5. Run migrations
+php artisan migrate
+
+# 6. Seed default data
+php artisan db:seed
+
+# 7. Link storage for photo uploads
+php artisan storage:link
+
+# 8. Start development server
+php artisan serve
+# → http://127.0.0.1:8000
+
+# 9. Test health check
+# GET http://127.0.0.1:8000/api/ping
+# Expected: { "success": true, "message": "CivilWatch API is running." }
+```
+
+---
+
+## Flutter Integration — Key Files to Edit
+
+```
+lib/
+├── core/
+│   ├── constants/
+│   │   └── api_constants.dart     ← CREATE THIS: base URL + endpoint paths
+│   └── state/
+│       └── app_state.dart         ← Replace in-memory data with API calls
+│
+├── services/
+│   ├── auth_service.dart          ← Wire to /api/mobile/auth/*
+│   ├── report_service.dart        ← Wire to /api/mobile/reports/*
+│   └── notification_service.dart  ← Wire to /api/mobile/notifications/*
+│
+└── screens/
+    ├── auth/login_screen.dart     ← Wire send-otp
+    ├── auth/otp_screen.dart       ← Wire verify-otp, get token
+    ├── auth/register_screen.dart  ← Wire register
+    ├── report/report_review.dart  ← Wire submit report
+    ├── my_reports/...             ← Wire list from API
+    ├── track_report/...           ← Wire show from API
+    ├── community_map/...          ← Wire community endpoint
+    └── notifications/...          ← Wire notifications endpoint
+```
+
+### New Packages to Add to pubspec.yaml
+
+```yaml
+dependencies:
+  flutter_secure_storage: ^9.2.2   # Store Sanctum token securely
+  image_picker: ^1.1.2             # Real photo capture
+  geolocator: ^13.0.2              # Real GPS
+  permission_handler: ^11.3.1      # Camera + location permissions
+```
+
+---
+
+## API Base URL by Environment
+
+| Environment | Base URL |
+|---|---|
+| Android Emulator | `http://10.0.2.2:8000/api/mobile` |
+| iOS Simulator | `http://127.0.0.1:8000/api/mobile` |
+| Real device (same WiFi) | `http://[your-local-IP]:8000/api/mobile` |
+| Production | `https://your-domain.com/api/mobile` |
 
 ---
 
 ## Recommended Dev Tools
 
 | Tool | Purpose |
-|------|---------|
-| Postman | Test all API endpoints before wiring the frontend |
-| TablePlus or DBeaver | GUI for MySQL during development |
-| Railway or PlanetScale | Free MySQL hosting for demo/defense |
-| Cloudinary (free tier) | 25GB storage, 25GB bandwidth/month — more than enough |
-| PM2 | Process manager for Node.js in production |
-| dotenv | Environment variable loading |
-| nodemon | Auto-restart during development |
-
----
-
-## Deployment Target
-
-| Layer | Service |
-|-------|---------|
-| Backend (Node/Express) | Railway or Render (free tier) |
-| Database (MySQL) | Railway MySQL plugin or PlanetScale |
-| Image Storage | Cloudinary |
-| Frontend (static HTML) | Same Railway service (Express serves `/client` as static) or Netlify |
-| Domain | `civilwatch.digos.gov.ph` (if available) or a free subdomain |
+|---|---|
+| Postman | Test all API endpoints before wiring Flutter |
+| TablePlus or DBeaver | MySQL GUI to verify data during dev |
+| Flutter DevTools | Debug app state + network requests |
+| Laravel Telescope | Optional — debug API requests in browser |
 
 ---
 

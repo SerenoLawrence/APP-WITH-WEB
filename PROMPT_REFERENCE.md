@@ -1,17 +1,18 @@
 # CIVILWATCH — Session Prompt Reference
 
-> Paste this entire prompt at the start of any new session so you never have to repeat yourself.
+> Paste this at the start of any new Kiro/AI session so you never have to re-explain the project.
+> Last Updated: August 13, 2026
 
 ---
 
 ## MASTER CONTEXT PROMPT
 
-Copy and paste the block below at the start of every new Kiro/AI session:
+Copy and paste the block below at the start of every new session:
 
 ---
 
 ```
-You are helping me build and maintain my capstone project.
+You are helping me build and maintain my capstone project CIVILWATCH.
 
 ─────────────────────────────────────────────────────────
 PROJECT TITLE
@@ -21,219 +22,274 @@ Environmental Incident Reporting, Management, and
 Monitoring System for Digos City.
 
 ─────────────────────────────────────────────────────────
-PROJECT TYPE
+WORKSPACE
 ─────────────────────────────────────────────────────────
-Capstone prototype only. NO backend. NO production code.
-Goal: Polished UI/UX prototype for defense presentation.
+c:\Users\User\Downloads\SERENO\APP-WITH-WEB\
 
-─────────────────────────────────────────────────────────
-WHAT HAS ALREADY BEEN BUILT
-─────────────────────────────────────────────────────────
-Admin Web Dashboard (civilwatch-admin/) — COMPLETE
-
-Technology stack:
-- HTML5 + CSS3 + Vanilla JavaScript ONLY
-- No React, No Vue, No Angular, No Bootstrap
-- Chart.js for analytics charts
-- Leaflet.js for GIS maps
-- Material Symbols for icons
-- Unsplash CDN for demo images
-- Inter / Roboto font
-
-Pages built:
-1. index.html          — Login page (demo: any credentials)
-2. dashboard.html      — Overview with stats, map, activity
-3. pending-reports.html — Validation queue table
-4. report-details.html  — Detail view, approve/reject modals
-5. assign-office.html   — Office assignment form (matches reference UI)
-6. monitoring.html      — Progress tracking with tabs and update modal
-7. gis-map.html         — Leaflet map with filter chips + detail panel
-8. analytics.html       — 5 charts: line, 2x horizontal bar, 2x doughnut
-9. resolved-reports.html — Archive of resolved reports
-
-CSS files (assets/css/):
-variables.css, global.css, layout.css, sidebar.css,
-navbar.css, cards.css, buttons.css, tables.css, badges.css,
-forms.css, charts.css, map.css, responsive.css
-
-JS files (assets/js/):
-- app.js   → Sidebar, navbar, notifications panel, dark mode
-- utils.js → Status badges, category badges, image URLs, toast
-
-Data files (assets/data/):
-- reports.json   → 18 sample reports
-- analytics.json → Chart data
-- barangays.json → 26 Digos City barangays with GPS coords
-
-Features working:
-✅ Sidebar collapse/expand
-✅ Notifications panel (redesigned — gradient icons, unread dots,
-   count badge, "Mark all as read", styled footer)
-✅ Dark mode toggle (moon/sun icon in navbar, persists via localStorage)
-✅ Live search + multi-filter on all report tables
-✅ Leaflet maps on Dashboard, GIS Map, Report Details
-✅ Chart.js: line chart (weekly/monthly toggle), 2 horizontal bars,
-   2 doughnut charts
-✅ Approve/Reject modals with toast feedback
-✅ Assign Office: office cards, priority pills, notes textarea,
-   success modal (all matching reference image)
-✅ Update Progress modal on Monitoring page
-✅ Tab filters on Monitoring (All/Assigned/In Progress/Resolved)
-✅ Real Unsplash images per issue type (thumbnail + large size)
-✅ Pagination UI (visual only — first page data shown)
+All three components are inside prc/:
+  prc/civ-main/    ← Flutter citizen mobile app
+  prc/laravel/     ← Laravel 12 backend API
+  prc/[web files]  ← HTML/CSS/JS admin dashboard
 
 ─────────────────────────────────────────────────────────
-WHAT IS NOT BUILT YET (Optional)
+WHAT HAS BEEN BUILT
 ─────────────────────────────────────────────────────────
-- users.html   (linked in sidebar, page not created)
-- settings.html (linked in sidebar, page not created)
-- Functional pagination
-- Export Reports logic
+
+COMPONENT 1 — Admin Web Dashboard (Complete UI Prototype)
+  Stack: HTML5 + CSS3 + Vanilla JavaScript + Leaflet.js + Chart.js
+  Pages: 27 (11 Super Admin + 8 CEO + 8 CENRO)
+  Status: 100% prototype UI — no backend connected yet
+  Auth: localStorage (cw_role, cw_name, cw_title)
+
+  Demo login:
+    admin / admin123  → Super Admin
+    ceo   / ceo123    → City Engineering Office
+    cenro / cenro123  → CENRO
+
+COMPONENT 2 — Citizen Mobile App (Complete UI Prototype)
+  Stack: Flutter / Dart SDK ^3.12.2
+  Screens: 18 (auth, home, report flow, my reports,
+           track report, map, notifications, profile)
+  Status: 100% screens built — ZERO backend connection
+  All data is in-memory (AppState singleton), resets on restart
+  The only real HTTP call is Nominatim reverse geocoding
+
+COMPONENT 3 — Laravel Backend (Fully Built, Needs DB Setup)
+  Stack: Laravel 12, PHP, MySQL, Sanctum (multi-guard)
+  Status: 100% API built — needs composer install + migrate + serve
+  Two auth guards:
+    auth:sanctum → staff (email+password) → /api/* and /admin/*
+    auth:citizen → citizens (phone+OTP+PIN) → /api/mobile/*
+  All API response shapes match Flutter models exactly
 
 ─────────────────────────────────────────────────────────
-SCOPE — DO NOT ADD THESE (EVER)
+INTEGRATION STATUS
 ─────────────────────────────────────────────────────────
-❌ AI image verification
-❌ Duplicate detection
-❌ Fire incidents
-❌ Disaster prediction
-❌ Crime reporting
-❌ Lost and Found
-❌ Emergency response
-❌ Hazard forecasting
-❌ Project NOAH concepts
+Flutter ↔ Laravel:    NOT YET CONNECTED
+Web Admin ↔ Laravel:  NOT YET CONNECTED
+
+Current phase: Connecting Flutter app to Laravel backend.
+Check SESSION_PROGRESS.md for the numbered task list.
 
 ─────────────────────────────────────────────────────────
-SUPPORTED INCIDENT CATEGORIES
+LARAVEL QUICK START
 ─────────────────────────────────────────────────────────
-Infrastructure:
-  Broken Streetlight, Damaged Road, Damaged Sidewalk,
-  Blocked Drainage, Damaged Bridge, Road Sign Damage, Others
+cd prc/laravel
+copy .env.example .env   ← set DB_* credentials
+composer install
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+php artisan storage:link
+php artisan serve         ← runs at http://127.0.0.1:8000
 
-Environmental:
-  Illegal Dumping, Blocked Canal, Overgrown Vegetation,
-  Soil Erosion, Others
+Admin login after seeding:
+  Email:    admin@civilwatch.ph
+  Password: Admin@2026!
+
+Web panel: http://127.0.0.1:8000/admin/login
+API base:  http://127.0.0.1:8000/api/
+Health:    GET /api/ping → { "success": true }
+
+─────────────────────────────────────────────────────────
+FLUTTER API BASE URLS
+─────────────────────────────────────────────────────────
+Android emulator: http://10.0.2.2:8000/api/mobile
+iOS simulator:    http://127.0.0.1:8000/api/mobile
+Real device:      http://[local-IP]:8000/api/mobile
+
+─────────────────────────────────────────────────────────
+KEY API ENDPOINTS (Mobile)
+─────────────────────────────────────────────────────────
+POST /api/mobile/auth/send-otp          No auth — returns OTP in response
+POST /api/mobile/auth/verify-otp        No auth — returns { token, isNewUser }
+POST /api/mobile/auth/register          No auth — returns token
+GET  /api/mobile/auth/me                Bearer token required
+POST /api/mobile/reports                Submit report (multipart)
+GET  /api/mobile/reports                My reports list
+GET  /api/mobile/reports/community      Community map reports (validated)
+GET  /api/mobile/reports/{id}           Report detail + activity log
+GET  /api/mobile/notifications          Notifications list
+POST /api/mobile/notifications/mark-all-read
+GET  /api/mobile/announcements          Public — no auth required
+
+─────────────────────────────────────────────────────────
+REPORT CATEGORIES
+─────────────────────────────────────────────────────────
+Infrastructure (→ CEO):
+  Road Repair, Road Graveling,
+  Streetlight / Light Pole Concern, Blocked Canal, Others
+
+Environmental (→ CENRO):
+  Illegal Dumping, Garbage Collection
 
 ─────────────────────────────────────────────────────────
 REPORT STATUS FLOW
 ─────────────────────────────────────────────────────────
-Submitted → Pending Validation → Assigned to Office
-→ In Progress → Resolved
+Pending Validation → Assigned to Office → In Progress → Resolved
+
+Status colors:
+  Pending:    Amber  #F59E0B
+  Assigned:   Blue   #1A56DB (web) / #2563EB (app)
+  In Progress:Orange #F97316 (web) / #EA580C (app)
+  Resolved:   Green  #10B981 (web) / #16A34A (app)
 
 ─────────────────────────────────────────────────────────
-DESIGN RULES
+DESIGN TOKENS — WEB ADMIN
 ─────────────────────────────────────────────────────────
-- White background (#F9FAFB), Blue primary (#1A56DB)
-- Pending = Yellow (#F59E0B)
-- In Progress = Orange (#F97316)
-- Resolved = Green (#10B981)
-- Border radius: 16px
-- Font: Inter or Roboto
-- Soft shadows, rounded cards, lots of whitespace
-- Material Design 3 inspired
-- Dark mode: background #161B27, cards #1E2330
+Primary (Admin/CEO):   #1A56DB
+CENRO primary:         #10B981
+Page background:       #F9FAFB
+Card background:       #FFFFFF
+Border radius (cards): 16px
+Dark background:       #161B27
+Dark card:             #1E2330
 
 ─────────────────────────────────────────────────────────
-OFFICE ASSIGNMENT RULES
+DESIGN TOKENS — FLUTTER APP
 ─────────────────────────────────────────────────────────
-Infrastructure issues → City Engineering Office (CEO)
-Environmental issues  → City Environment and Natural
-                        Resources Office (CENRO)
-Others                → Super Administrator decides
+Primary green:   #1B5E20
+Navy:            #0D2137
+Background:      #F8FAFC
+Card:            #FFFFFF
+Border radius:   16–20px
+Font:            Inter (UI) + Roboto Mono (reference numbers)
 
 ─────────────────────────────────────────────────────────
-USERS
+SCOPE — DO NOT ADD
 ─────────────────────────────────────────────────────────
-Admin Dashboard users:
-- Super Administrator (validates, assigns, monitors all)
-- Office Personnel (updates status of assigned reports)
+❌ AI image verification / duplicate detection
+❌ Fire, disaster, crime, lost and found
+❌ Emergency response / hazard forecasting
 
 ─────────────────────────────────────────────────────────
 PROJECT INFO
 ─────────────────────────────────────────────────────────
 University: University of Mindanao — Digos Branch
+Program:    BS Information Technology
+Year:       2026
 Proponents: Renz Justine Y. Borinaga,
             Jhon Carlo Mag-Usara,
             Lawrence Roy P. Sereno
-Adviser: Cyvil Dave Dasargo, MIT
-Year: 2026
+Adviser:    Cyvil Dave Dasargo, MIT
 
 ─────────────────────────────────────────────────────────
 INSTRUCTIONS FOR YOU
 ─────────────────────────────────────────────────────────
 - Always read existing files before editing them
-- Match existing code style — no new libraries
-- Keep all CSS in the correct separate CSS file
-- Keep all JS in app.js or utils.js (shared) or inline in the page
-- Do not add features outside the defined scope
-- This is a prototype — focus on UI/UX polish
-- Refer to PROJECT_STATUS.md for what is done and what is pending
+- Match existing code style — no new libraries unless needed
+- For Flutter: colors in app_colors.dart, routes in app_routes.dart
+- For Laravel: follow existing Controller/Model patterns in the code
+- For Web: keep CSS in separate files, JS in app.js/utils.js or inline
+- Build and test each step before moving to the next
+- The backend is fully built — wire it, don't rebuild it
+- Check SESSION_PROGRESS.md for the numbered task list
 ```
 
 ---
 
 ## Quick Reference: File Locations
 
-| What you want to change | File to edit |
-|-------------------------|-------------|
-| Colors, spacing tokens | `assets/css/variables.css` |
-| Dark mode overrides | `assets/css/global.css` (bottom section) |
-| Sidebar navigation | `assets/js/app.js` → `renderSidebar()` |
-| Navbar + notifications | `assets/js/app.js` → `renderNavbar()`, `renderNotifPanel()` |
-| Dark mode toggle logic | `assets/js/app.js` → `toggleDarkMode()`, `loadTheme()` |
+### Flutter App (`prc/civ-main/lib/`)
+
+| What | File |
+|---|---|
+| API base URL (create this) | `core/constants/api_constants.dart` |
+| All color tokens | `core/constants/app_colors.dart` |
+| All string constants | `core/constants/app_strings.dart` |
+| Named routes | `core/routes/app_routes.dart` |
+| Route factory | `core/routes/route_generator.dart` |
+| App state (singleton) | `core/state/app_state.dart` |
+| Dummy/seed data | `core/utils/dummy_data.dart` |
+| Auth service | `services/auth_service.dart` |
+| Report service | `services/report_service.dart` |
+| Notification service | `services/notification_service.dart` |
+| Login screen | `screens/auth/login_screen.dart` |
+| OTP screen | `screens/auth/otp_screen.dart` |
+| Register screen | `screens/auth/register_screen.dart` |
+| Report review (submit) | `screens/report/report_review.dart` |
+| My Reports | `screens/my_reports/my_reports_screen.dart` |
+| Track Report | `screens/track_report/track_report_screen.dart` |
+| Community Map | `screens/community_map/community_map_screen.dart` |
+| Notifications | `screens/notifications/notification_screen.dart` |
+| Home | `screens/home/home_screen.dart` |
+| Profile | `screens/profile/profile_screen.dart` |
+
+### Laravel Backend (`prc/laravel/`)
+
+| What | File |
+|---|---|
+| All API routes | `routes/api.php` |
+| Web panel routes | `routes/web.php` |
+| Mobile auth controller | `app/Http/Controllers/Mobile/MobileAuthController.php` |
+| Mobile reports controller | `app/Http/Controllers/Mobile/MobileReportController.php` |
+| Mobile notifications | `app/Http/Controllers/Mobile/MobileNotificationController.php` |
+| Admin report controller | `app/Http/Controllers/Admin/AdminCitizenReportController.php` |
+| Citizen model | `app/Models/Citizen.php` |
+| CitizenReport model | `app/Models/CitizenReport.php` |
+| Auth config (guards) | `config/auth.php` |
+| Environment config | `.env` (copy from `.env.example`) |
+| Migrations | `database/migrations/` |
+| Seeders | `database/seeders/` |
+
+### Web Admin
+
+| What | File |
+|---|---|
+| Login + role routing | `index.html` |
+| Sidebar/navbar (per role) | `assets/js/app.js` |
+| Shared CSS tokens | `assets/css/variables.css` |
+| Dark mode overrides | `assets/css/global.css` |
 | Status badge HTML | `assets/js/utils.js` → `Utils.statusBadge()` |
-| Category badge HTML | `assets/js/utils.js` → `Utils.categoryBadge()` |
-| Image URLs | `assets/js/utils.js` → `PHOTO_URLS`, `getPhotoUrl()`, `getPhotoUrlLarge()` |
-| Table toolbar style | `assets/css/tables.css` |
-| Notification panel style | `assets/css/navbar.css` (bottom section) |
-| Map pins / popup | `assets/css/map.css` |
-| Chart containers | `assets/css/charts.css` |
+| CEO report detail | `offices/ceo/report-details.html` |
+| CENRO report detail | `offices/cenro/report-details.html` |
+| CEO analytics | `offices/ceo/analytics.html` |
+| CENRO analytics | `offices/cenro/analytics.html` |
 
 ---
 
-## Quick Reference: Status Colors
+## Quick Reference: Credentials
 
-| Status | Color | Hex |
-|--------|-------|-----|
-| Pending Validation | Yellow | `#F59E0B` |
-| Assigned | Blue | `#1A56DB` |
-| In Progress | Orange | `#F97316` |
-| Resolved | Green | `#10B981` |
+### Web Prototype (static)
+| Role | Username | Password |
+|---|---|---|
+| Super Admin | `admin` | `admin123` |
+| CEO | `ceo` | `ceo123` |
+| CENRO | `cenro` | `cenro123` |
 
----
-
-## Quick Reference: Dark Mode
-
-- Toggled by clicking the **moon icon** in the navbar
-- Stored in `localStorage` key: `theme` (`"light"` or `"dark"`)
-- Applied as `data-theme="dark"` on `<html>` element
-- All dark overrides are in `assets/css/global.css` under the `[data-theme="dark"]` block
+### Laravel (after seeding)
+| Email | Password |
+|---|---|
+| `admin@civilwatch.ph` | `Admin@2026!` |
 
 ---
 
-## Common Tasks — How to Ask
+## Quick Reference: Common Tasks
 
 | Task | How to phrase it |
-|------|-----------------|
-| Fix a page to match reference | "Look at [page], here's the reference image — fix the differences" |
-| Add a new feature | "Add [feature] to [page] — keep it within CIVILWATCH scope" |
-| Fix a bug | "On [page], [describe problem]" |
-| Build a missing page | "Build users.html — follow the same style as the existing pages" |
-| Change colors/style | "Update the [element] on [page] to look like [description]" |
-| Add interactivity | "Make [element] on [page] interactive — [describe behavior]" |
+|---|---|
+| Wire a Flutter screen | "Wire [screen] to [endpoint] — replace the mock in [service file]" |
+| Fix a Laravel API response | "Fix the response shape in [controller] to match Flutter [model]" |
+| Fix a web admin page | "On [page], [describe problem] — keep the same CSS/JS style" |
+| Add a new feature | "Add [feature] to [component] — check FEATURES.md for scope" |
+| Check next tasks | "What is the next task in SESSION_PROGRESS.md?" |
+| Run the backend | "Help me set up and run the Laravel backend in prc/laravel/" |
 
 ---
 
-## Pending Work
+## Pending Work (Summary)
 
-See `PROJECT_STATUS.md` → **Not Yet Built** section for the full list.
+See `SESSION_PROGRESS.md` for the full numbered task list.
 
-Priority suggestions for next session:
-1. Build `users.html` — User management page
-2. Build `settings.html` — System settings page
-3. Make pagination functional (load more data on page click)
-4. Add smooth page transition animations
+**Priority order:**
+1. Get Laravel running (setup `.env`, migrate, seed, serve)
+2. Wire Flutter auth (send-otp, verify-otp, register)
+3. Wire Flutter report submission
+4. Wire Flutter My Reports, Track Report, Community Map, Notifications
+5. Add `image_picker` (real photo) + `geolocator` (real GPS) to Flutter
+6. Connect Web Admin to Laravel API (replace static JSON)
 
 ---
 
 *Keep this file. Paste the master prompt block at the top of every new session.*
+*All three components are in: prc/ inside the APP-WITH-WEB workspace.*

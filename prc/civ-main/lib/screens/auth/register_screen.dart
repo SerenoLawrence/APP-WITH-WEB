@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _formKey = GlobalKey<FormState>();
 
   // ── Controllers ───────────────────────────────────────────────────────────
+  final _phoneCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
 
@@ -53,6 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   void dispose() {
+    _phoneCtrl.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _animController.dispose();
@@ -103,12 +105,20 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1400));
+    await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    Navigator.pushNamedAndRemoveUntil(
-        context, AppRoutes.home, (route) => false);
+    // Go to OTP screen to verify phone number — after OTP → home
+    final phone = '+63 ${_phoneCtrl.text.trim()}';
+    Navigator.pushNamed(
+      context,
+      AppRoutes.otp,
+      arguments: {
+        'phone': phone,
+        'isNewUser': false, // after OTP verify → goes straight to home
+      },
+    );
   }
 
   void _showSnack(String msg, {required bool isError}) {
@@ -187,6 +197,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                               crossAxisAlignment:
                                   CrossAxisAlignment.start,
                               children: [
+                                // ── Phone Number ─────────────────────────
+                                _FieldLabel(
+                                    icon: Icons.phone_android_rounded,
+                                    label: 'Mobile Number'),
+                                const SizedBox(height: 8),
+                                _buildPhoneField(),
+                                const SizedBox(height: 18),
+
                                 // ── Full Name ─────────────────────────────
                                 _FieldLabel(
                                     icon: Icons.person_outline_rounded,
@@ -369,6 +387,56 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
+  // ── Phone field builder ───────────────────────────────────────────────────
+  Widget _buildPhoneField() {
+    return TextFormField(
+      controller: _phoneCtrl,
+      keyboardType: TextInputType.phone,
+      validator: AppValidators.phoneNumber,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(10),
+        _PhoneFormatter(),
+      ],
+      style: GoogleFonts.inter(
+          fontSize: 14,
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        hintText: '9XX XXX XXXX',
+        hintStyle:
+            GoogleFonts.inter(fontSize: 14, color: AppColors.textHint),
+        filled: true,
+        fillColor: AppColors.inputFill,
+        prefixIcon: _PhonePrefixWidget(),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide:
+              const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFDC2626)),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide:
+              const BorderSide(color: Color(0xFFDC2626), width: 1.5),
+        ),
+      ),
+    );
+  }
+
   // ── Shared text field builder ─────────────────────────────────────────────
   Widget _buildTextField({
     required TextEditingController controller,
@@ -470,8 +538,6 @@ class _PinInputRowState extends State<_PinInputRow> {
     setState(() {});
   }
 
-  String get _currentPin => _ctrls.map((c) => c.text).join();
-
   @override
   Widget build(BuildContext context) {
     final activeColor =
@@ -483,7 +549,6 @@ class _PinInputRowState extends State<_PinInputRow> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(_len, (i) {
         final isFilled = _ctrls[i].text.isNotEmpty;
-        final isFocused = _nodes[i].hasFocus;
 
         return Container(
           width: 46,
@@ -666,7 +731,7 @@ class _RegisterHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Step 4 of 4 · Registration',
+                  'Step 1 of 2 · Create Account',
                   style: GoogleFonts.inter(
                       fontSize: 11,
                       color: AppColors.textSecondary),
@@ -798,6 +863,63 @@ class _BarangayDropdown extends StatelessWidget {
           color: AppColors.textSecondary),
       borderRadius: BorderRadius.circular(12),
       isExpanded: true,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phone prefix widget (+63 flag) — reused from login
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PhonePrefixWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(left: 12, right: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: const BoxDecoration(
+        border: Border(right: BorderSide(color: AppColors.inputBorder)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('🇵🇭', style: TextStyle(fontSize: 16)),
+          const SizedBox(width: 4),
+          Text(
+            '+63',
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 2),
+          const Icon(Icons.keyboard_arrow_down_rounded,
+              size: 16, color: AppColors.textSecondary),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phone formatter: 9XX XXX XXXX
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PhoneFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length && i < 10; i++) {
+      if (i == 3 || i == 6) buffer.write(' ');
+      buffer.write(digits[i]);
+    }
+    final str = buffer.toString();
+    return newValue.copyWith(
+      text: str,
+      selection: TextSelection.collapsed(offset: str.length),
     );
   }
 }

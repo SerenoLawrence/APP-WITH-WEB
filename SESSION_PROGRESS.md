@@ -1,229 +1,207 @@
 # CIVILWATCH — Session Progress & Next Tasks
 
-> Last Updated: August 3, 2026
+> Last Updated: August 13, 2026
 > Context file for continuing development in the next session.
+
+---
+
+## Current Project State
+
+All three components are built and co-located in one workspace:
+
+| Component | Location | Status |
+|---|---|---|
+| Admin Web Dashboard | `prc/` (HTML/CSS/JS) | ✅ Complete prototype (27 pages) |
+| Citizen Mobile App | `prc/civ-main/` | ✅ Complete prototype (18 screens, 0% backend) |
+| Laravel Backend API | `prc/laravel/` | ✅ Fully built (needs DB setup to run) |
+
+The three components are now in **one repository** (`APP-WITH-WEB`). Previous sessions had them separate. The web admin and Flutter app were already complete as prototypes. The Laravel backend was built to serve both.
 
 ---
 
 ## ✅ Completed This Session
 
-### 1. Settings Page — Notification Table Fix
-- Removed System, Email, SMS columns from the Notification Settings table
-- Status column replaced with a toggle switch (On/Off) aligned under ACTIVE header
-- Toggle is now vertically and horizontally centered in its column
+### 1. Project Consolidation
+- All three components (`web admin`, `civ-main Flutter app`, `laravel backend`) are now in one workspace under `prc/`
+- All top-level documentation MDs updated to reflect the full-stack state
+
+### 2. All MD Files Updated (August 13, 2026)
+
+| File | What Changed |
+|---|---|
+| `README.md` | Full rewrite — project overview, folder structure, quick start, all API endpoints |
+| `PROJECT_STATUS.md` | Full rewrite — all three components with detailed task checklists |
+| `FEATURES.md` | Full rewrite — features across web admin, Flutter app, and Laravel backend |
+| `FINAL_STATUS.md` | Full rewrite — build completion per component, remaining tasks numbered |
+| `SESSION_PROGRESS.md` | This file — current state and next tasks |
+| `SYSTEM_DESIGN.md` | Updated — actual stack (Laravel + Flutter, not Node.js) |
+| `PRODUCTION_PROMPT.md` | Updated — actual stack reflected in prompt |
+| `PROMPT_REFERENCE.md` | Updated — master context prompt reflects full-stack state |
+
+### 3. Laravel Backend — What Was Already Built (Previous Session)
+
+The backend was fully scaffolded with:
+- 7 database migrations (citizens, otp_codes, government_offices, citizen_reports, report_activities, citizen_notifications, announcements)
+- 8 Eloquent models with API response methods matching Flutter models exactly
+- All mobile API routes: `/api/mobile/auth/*`, `/api/mobile/reports/*`, `/api/mobile/notifications/*`
+- All admin API routes: `/api/admin/*`
+- Blade web panel views: login, dashboard, citizen-reports, map, offices, announcements
+- Seeders: GovernmentOfficeSeeder, AnnouncementSeeder, DatabaseSeeder (admin account)
+- Multi-guard Sanctum config: `citizen` guard (phone+PIN) + `sanctum` guard (email+password)
+- OTP system: generates code, stores in DB, returns in response (no SMS provider needed for dev)
+- `CitizenReport::transitionTo()` — status change auto-creates activity log + citizen notification
 
 ---
 
-### 2. Role-Based Login System
-Three login credentials now route to separate dashboards:
+## 🔲 Next Tasks (Priority Order)
 
-| Username | Password | Role | Redirects To |
-|----------|----------|------|--------------|
-| `admin` | `admin123` | Super Admin | `dashboard.html` |
-| `ceo` | `ceo123` | City Engineering Officer | `offices/ceo/dashboard.html` |
-| `cenro` | `cenro123` | CENRO Administrator | `offices/cenro/dashboard.html` |
+### PHASE 1 — Get the Backend Running (Do This First)
 
-- `localStorage` stores: `cw_role`, `cw_name`, `cw_title`
-- `app.js` reads role and renders role-specific sidebar, navbar name/title, and initials
+| # | Task | Command / Action |
+|---|---|---|
+| 1 | Create `.env` from example | `copy .env.example .env` in `prc/laravel/` |
+| 2 | Set MySQL credentials in `.env` | Edit `DB_*` variables |
+| 3 | Install PHP dependencies | `composer install` |
+| 4 | Generate app key | `php artisan key:generate` |
+| 5 | Run migrations | `php artisan migrate` |
+| 6 | Seed default data | `php artisan db:seed` |
+| 7 | Link storage | `php artisan storage:link` |
+| 8 | Start server | `php artisan serve` → `http://127.0.0.1:8000` |
+| 9 | Test health check | `GET /api/ping` → `{ "success": true }` |
 
----
-
-### 3. Role Guards on All Super Admin Pages
-Guard script added at the top of every super admin page (before `<head>`):
-- No role → redirect to `index.html`
-- Wrong role → redirect to correct office dashboard
-
-Pages guarded: `dashboard.html`, `pending-reports.html`, `assign-office.html`, `monitoring.html`, `gis-map.html`, `analytics.html`, `resolved-reports.html`, `report-details.html`, `users.html`, `settings.html`
-
----
-
-### 4. Office Pages — Folder Structure
-
-```
-offices/
-├── ceo/
-│   ├── dashboard.html       ✅ Blue theme, infrastructure stats, Leaflet map
-│   ├── reports.html         ✅ My Assigned Reports table (infrastructure only)
-│   ├── inprogress.html      ✅ Active Reports — redesigned (see below)
-│   ├── resolved.html        ✅ Resolved Reports with summary cards
-│   ├── map.html             ✅ Leaflet map with filter chips
-│   ├── analytics.html       ✅ Infrastructure-only analytics (5 charts)
-│   ├── settings.html        ✅ Placeholder (coming soon)
-│   └── report-details.html  ✅ Full detail page (see below)
-│
-└── cenro/
-    ├── dashboard.html       ✅ Green theme, environmental stats, Leaflet map
-    ├── reports.html         ✅ My Assigned Reports table (environmental only)
-    ├── inprogress.html      ✅ Active Reports — redesigned (see below)
-    ├── resolved.html        ✅ Resolved Reports with summary cards
-    ├── map.html             ✅ Leaflet map with filter chips
-    ├── analytics.html       ✅ Environmental-only analytics (5 charts)
-    ├── settings.html        ✅ Placeholder (coming soon)
-    └── report-details.html  ✅ Full detail page (see below)
-```
-
-All office pages use `../../assets/` for shared CSS/JS.
-All office pages have role guards that prevent wrong-role access.
-
----
-
-### 5. Active Reports Page (inprogress.html) — Redesigned
-Matches new reference UI:
-- 3 stat cards: In Progress / For Resolution / Assigned (each with "View all" filter link)
-- Report list: photo thumbnail + title + location + ref number + date/time + assigned-by
-- Status pill per row: In Progress (orange) / For Resolution (yellow) / Assigned (blue/green)
-- "Continue →" button links to `report-details.html?ref=`
-- Search + category filter + barangay filter + sort (Newest/Oldest)
-- Right info panel: "About Active Reports" legend + "Quick Tips"
-- CEO = blue accent, CENRO = green accent
-
----
-
-### 6. Report Details Page (report-details.html) — Built for Both Offices
-Features:
-- Back link → My Assigned Reports
-- Title + reference number + status badge + assigned date
-- Incident photo (citizen submitted)
-- Incident information table (category, location, coordinates, date, reference)
-- Description card
-- Leaflet map preview with link to full map
-- 5-step progress timeline (Submitted → Validated → Assigned → In Progress → Resolved)
-- Update Progress form (status dropdown + remarks textarea with char count)
-- "Save Update" button (updates status badge live)
-- "Mark as Resolved" button → confirmation modal → success banner + timeline update
-- Before/After photo section (side by side):
-  - **Before**: citizen's original incident photo (auto-loaded)
-  - **After**: placeholder with "Upload After Photo" button (future task)
-- Info tip at bottom
-- CEO = blue, CENRO = green
-
----
-
-### 7. Analytics Pages — Built for Both Offices
-
-**CEO Analytics** (`offices/ceo/analytics.html`):
-- Summary strip: Total Assigned (32), In Progress (18), Resolved (22), Resolution Rate (68%)
-- Chart 1: Infrastructure Reports Over Time — line chart (weekly/monthly toggle)
-- Chart 2: Most Reported Infrastructure Issues — horizontal bar (Damaged Road, Blocked Drainage, etc.)
-- Chart 3: Status Distribution — doughnut
-- Chart 4: Reports by Barangay — horizontal bar
-- Chart 5: Priority Distribution — doughnut
-
-**CENRO Analytics** (`offices/cenro/analytics.html`):
-- Summary strip: Total Assigned (28), In Progress (16), Resolved (35), Resolution Rate (74%)
-- Chart 1: Environmental Reports Over Time — line chart (weekly/monthly toggle)
-- Chart 2: Most Reported Environmental Issues — horizontal bar (Illegal Dumping, Blocked Canal, etc.)
-- Chart 3: Status Distribution — doughnut
-- Chart 4: Reports by Barangay — horizontal bar
-- Chart 5: Priority Distribution — doughnut
-
----
-
-### 8. Sidebar Updates (app.js)
-- "In Progress" renamed to "Active Reports" for both CEO and CENRO
-- Analytics nav item added between Map and Settings for both roles
-- CENRO sidebar uses green gradient background
-- Logout link added to all role sidebars — clears localStorage and redirects to `index.html`
-
----
-
-## 🔲 Pending Tasks (Next Session)
-
-### HIGH PRIORITY
+### PHASE 2 — Flutter Auth Integration
 
 | # | Task | File(s) |
-|---|------|---------|
-| 1 | **Before/After photo upload** — implement actual file picker with `FileReader` local preview. Before = citizen photo, After = office uploads resolution photo. Side-by-side display. | `offices/ceo/report-details.html`, `offices/cenro/report-details.html` |
-| 2 | **Office Settings page** — currently just a placeholder. Build actual settings (profile info, notification preferences, password change) for CEO and CENRO. | `offices/ceo/settings.html`, `offices/cenro/settings.html` |
+|---|---|---|
+| 10 | Create `ApiConstants` with base URL | `lib/core/constants/api_constants.dart` |
+| 11 | Add `flutter_secure_storage` to pubspec | `pubspec.yaml` |
+| 12 | Wire `POST /api/mobile/auth/send-otp` | `auth/login_screen.dart` + `auth_service.dart` |
+| 13 | Wire `POST /api/mobile/auth/verify-otp` | `auth/otp_screen.dart` + `auth_service.dart` |
+| 14 | Wire `POST /api/mobile/auth/register` | `auth/register_screen.dart` + `auth_service.dart` |
+| 15 | Store returned Sanctum token securely | `auth_service.dart` |
+| 16 | Wire `GET /api/mobile/auth/me` for profile | `profile/profile_screen.dart` |
 
-### MEDIUM PRIORITY
+### PHASE 3 — Flutter Reports Integration
 
 | # | Task | File(s) |
-|---|------|---------|
-| 3 | **Resolved reports → report-details link** — `resolved.html` rows are not yet linked to `report-details.html`. Add View button with `?ref=` param. | `offices/ceo/resolved.html`, `offices/cenro/resolved.html` |
-| 4 | **Dashboard → reports link** — "View All Assigned Reports" in dashboard links to `reports.html` but recent report rows are not individually clickable to report-details. | `offices/ceo/dashboard.html`, `offices/cenro/dashboard.html` |
-| 5 | **Analytics data sync** — analytics figures are currently hardcoded dummy data. Consider pulling counts from the shared `reports.json` data for consistency. | `offices/ceo/analytics.html`, `offices/cenro/analytics.html` |
+|---|---|---|
+| 17 | Wire `POST /api/mobile/reports` (submit) | `report/report_review.dart` + `report_service.dart` |
+| 18 | Wire `GET /api/mobile/reports` (my list) | `my_reports/my_reports_screen.dart` |
+| 19 | Wire `GET /api/mobile/reports/{id}` (detail) | `track_report/track_report_screen.dart` |
+| 20 | Wire `GET /api/mobile/reports/community` (map) | `community_map/community_map_screen.dart` |
+| 21 | Add `image_picker` for real photo capture | `pubspec.yaml` + `report/report_photo.dart` |
+| 22 | Add `geolocator` + `permission_handler` for GPS | `pubspec.yaml` + `report/report_location.dart` |
 
-### LOW PRIORITY / FUTURE
+### PHASE 4 — Flutter Notifications + Announcements
+
+| # | Task | File(s) |
+|---|---|---|
+| 23 | Wire `GET /api/mobile/notifications` | `notifications/notification_screen.dart` |
+| 24 | Wire mark read / mark all read | `notifications/notification_screen.dart` |
+| 25 | Wire `GET /api/mobile/announcements` | `home/home_screen.dart` |
+
+### PHASE 5 — Web Admin → Laravel (Optional for Prototype Defense)
 
 | # | Task | Notes |
-|---|------|-------|
-| 6 | Functional pagination on all table pages | UI exists, data doesn't page |
-| 7 | Export reports button | Currently shows "coming soon" toast |
-| 8 | Real-time map pin updates | Pins are static |
-| 9 | Super Admin — view CEO/CENRO report progress | Super admin can't currently see what office users have updated |
+|---|---|---|
+| 26 | Replace static JSON fetches with `fetch()` to `/api/*` | All list/table pages |
+| 27 | Replace localStorage auth with real Sanctum token | `index.html` login + `app.js` |
+| 28 | Wire photo uploads to Laravel storage | `report-details.html` for CEO + CENRO |
+
+### HIGH — Web Admin Polish (Can Do Anytime)
+
+| # | Task | File(s) |
+|---|---|---|
+| 29 | After photo upload (FileReader preview) | `offices/ceo/report-details.html`, `offices/cenro/report-details.html` |
+| 30 | CEO + CENRO Settings pages | `offices/ceo/settings.html`, `offices/cenro/settings.html` |
 
 ---
 
 ## 📁 Key File Reference
 
+### Flutter App
+
 | What to change | File |
-|----------------|------|
-| Login credentials & routing | `index.html` |
-| Sidebar/navbar per role | `assets/js/app.js` → `renderSidebar()`, `renderNavbar()` |
-| Role logout logic | `assets/js/app.js` → `logout()` |
+|---|---|
+| API base URL | `lib/core/constants/api_constants.dart` (create) |
+| Auth service | `lib/services/auth_service.dart` |
+| Report service | `lib/services/report_service.dart` |
+| Notification service | `lib/services/notification_service.dart` |
+| Login screen | `lib/screens/auth/login_screen.dart` |
+| OTP screen | `lib/screens/auth/otp_screen.dart` |
+| Register screen | `lib/screens/auth/register_screen.dart` |
+| Report review (submit) | `lib/screens/report/report_review.dart` |
+| My Reports | `lib/screens/my_reports/my_reports_screen.dart` |
+| Track Report | `lib/screens/track_report/track_report_screen.dart` |
+| Community Map | `lib/screens/community_map/community_map_screen.dart` |
+| Notifications | `lib/screens/notifications/notification_screen.dart` |
+| State | `lib/core/state/app_state.dart` |
+
+### Laravel Backend
+
+| What to change | File |
+|---|---|
+| Environment config | `prc/laravel/.env` |
+| Mobile auth routes | `prc/laravel/routes/api.php` → `/api/mobile/auth/*` |
+| Mobile auth logic | `prc/laravel/app/Http/Controllers/Mobile/MobileAuthController.php` |
+| Report submit logic | `prc/laravel/app/Http/Controllers/Mobile/MobileReportController.php` |
+| OTP strategy | `MobileAuthController::sendOtp()` → TODO comment for real SMS |
+| Citizen model | `prc/laravel/app/Models/Citizen.php` |
+| Report model | `prc/laravel/app/Models/CitizenReport.php` |
+| Migrations | `prc/laravel/database/migrations/` |
+| Seeders | `prc/laravel/database/seeders/` |
+
+### Web Admin
+
+| What to change | File |
+|---|---|
+| Login + role routing | `index.html` |
+| Sidebar/navbar per role | `assets/js/app.js` |
 | Shared CSS tokens | `assets/css/variables.css` |
-| CEO dashboard | `offices/ceo/dashboard.html` |
-| CENRO dashboard | `offices/cenro/dashboard.html` |
 | CEO report detail | `offices/ceo/report-details.html` |
 | CENRO report detail | `offices/cenro/report-details.html` |
-| CEO analytics | `offices/ceo/analytics.html` |
-| CENRO analytics | `offices/cenro/analytics.html` |
 
 ---
 
-## 🎨 Design Tokens
+## 🔐 Credentials Quick Reference
 
-| Token | Super Admin | CEO | CENRO |
-|-------|-------------|-----|-------|
-| Primary color | `#1A56DB` | `#1A56DB` | `#10B981` |
-| Light bg | `#EFF6FF` | `#EFF6FF` | `#ECFDF5` |
-| Sidebar bg | Dark blue gradient | Dark blue gradient | `#166534` green gradient |
-| In Progress | `#F97316` | `#F97316` | `#F97316` |
-| For Resolution | `#F59E0B` | `#F59E0B` | `#F59E0B` |
-| Resolved | `#10B981` | `#10B981` | `#10B981` |
+### Web Prototype (static localStorage)
+| Role | Username | Password |
+|---|---|---|
+| Super Admin | `admin` | `admin123` |
+| CEO | `ceo` | `ceo123` |
+| CENRO | `cenro` | `cenro123` |
+
+### Laravel Backend (after seeding)
+- Admin email: `admin@civilwatch.ph`
+- Admin password: `Admin@2026!`
+
+### Laravel Web Panel URL
+- `http://127.0.0.1:8000/admin/login`
+
+### API Base URLs
+- Admin/web: `http://127.0.0.1:8000/api/`
+- Mobile (emulator): `http://10.0.2.2:8000/api/mobile/`
+- Mobile (device on same network): `http://[your-local-ip]:8000/api/mobile/`
 
 ---
 
-## 🔐 Role Guard Pattern
+## 💡 Architecture Reminder
 
-All protected pages use this script **before `<head>`**:
-
-```html
-<!-- Super Admin pages (root level) -->
-<script>
-  (function(){
-    var role = localStorage.getItem('cw_role');
-    if (!role) { window.location.replace('index.html'); }
-    else if (role !== 'superadmin') {
-      window.location.replace(role === 'ceo' ? 'offices/ceo/dashboard.html' : 'offices/cenro/dashboard.html');
-    }
-  })();
-</script>
-
-<!-- CEO pages (offices/ceo/) -->
-<script>
-  (function(){
-    var role = localStorage.getItem('cw_role');
-    if (!role) { window.location.replace('../../index.html'); }
-    else if (role !== 'ceo') {
-      window.location.replace(role === 'superadmin' ? '../../dashboard.html' : '../cenro/dashboard.html');
-    }
-  })();
-</script>
-
-<!-- CENRO pages (offices/cenro/) -->
-<script>
-  (function(){
-    var role = localStorage.getItem('cw_role');
-    if (!role) { window.location.replace('../../index.html'); }
-    else if (role !== 'cenro') {
-      window.location.replace(role === 'superadmin' ? '../../dashboard.html' : '../ceo/dashboard.html');
-    }
-  })();
-</script>
 ```
+Flutter App (civ-main)           Web Admin (HTML/JS)
+        ↓  /api/mobile/*                ↓  /api/* or /api/admin/*
+        └──────────────┬────────────────┘
+                       ↓
+              Laravel Backend (prc/laravel)
+                       ↓  Eloquent ORM
+                     MySQL
+                   (civilwatch DB)
+```
+
+The Flutter app **never connects directly to MySQL**. Always through Laravel.
 
 ---
 
 *Paste this file at the start of the next session for full context.*
+*All three components are in: `c:\Users\User\Downloads\SERENO\APP-WITH-WEB\prc\`*

@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/state/app_state.dart';
 import '../../core/utils/validators.dart';
+import '../../screens/auth/forgot_password_flow.dart';
 import '../../widgets/buttons/primary_button.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final bool fromVisitor;
+  const LoginScreen({super.key, this.fromVisitor = false});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -18,6 +21,11 @@ class _LoginScreenState extends State<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePin = true;
+
+  // 6-digit PIN state
+  String _pin = '';
+
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -31,11 +39,11 @@ class _LoginScreenState extends State<LoginScreen>
     );
     _fadeAnim =
         CurvedAnimation(parent: _animController, curve: Curves.easeIn);
-    _slideAnim =
-        Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
-          CurvedAnimation(
-              parent: _animController, curve: Curves.easeOutCubic),
-        );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(
+        CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
     _animController.forward();
   }
 
@@ -46,19 +54,36 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  void _sendOtp() async {
+  // ── Login handler ─────────────────────────────────────────────────────────
+  void _login() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_pin.length != 6) {
+      _showSnack('Please enter your 6-digit PIN', isError: true);
+      return;
+    }
+
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
     setState(() => _isLoading = false);
-    final phone = '+63 ${_phoneController.text.trim()}';
-    // isNewUser: true → after OTP goes to Register
-    // isNewUser: false → after OTP goes straight to Home
-    Navigator.pushNamed(context, AppRoutes.otp, arguments: {
-      'phone': phone,
-      'isNewUser': true,
-    });
+
+    AppState().exitGuest();
+    Navigator.pushNamedAndRemoveUntil(
+        context, AppRoutes.home, (route) => false);
+  }
+
+  void _showSnack(String msg, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor:
+            isError ? const Color(0xFFDC2626) : AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   @override
@@ -76,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen>
               height: 280,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.loginBgDark.withOpacity(0.35),
+                color: AppColors.loginBgDark.withValues(alpha: 0.35),
               ),
             ),
           ),
@@ -88,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen>
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.05),
+                color: AppColors.primary.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -100,12 +125,12 @@ class _LoginScreenState extends State<LoginScreen>
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.loginBgDark.withOpacity(0.15),
+                color: AppColors.loginBgDark.withValues(alpha: 0.15),
               ),
             ),
           ),
 
-          // ── City skyline (bottom) ─────────────────────────────────────
+          // ── City skyline bottom decoration ────────────────────────────
           Positioned(
             bottom: 0,
             left: 0,
@@ -127,6 +152,50 @@ class _LoginScreenState extends State<LoginScreen>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 40),
+
+                        // ── Back to visitor ────────────────────────────
+                        if (widget.fromVisitor) ...[
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: GestureDetector(
+                              onTap: () {
+                                AppState().enterAsGuest();
+                                Navigator.pushReplacementNamed(
+                                    context, AppRoutes.visitor);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.white
+                                      .withValues(alpha: 0.85),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border:
+                                      Border.all(color: AppColors.divider),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                        Icons.arrow_back_ios_new_rounded,
+                                        size: 13,
+                                        color: AppColors.textSecondary),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      'Continue Browsing',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
 
                         // ── Logo + title ───────────────────────────────
                         Center(
@@ -157,35 +226,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
 
-                        const SizedBox(height: 12),
-
-                        // ── Hero tagline ───────────────────────────────
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color:
-                                  AppColors.primary.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: AppColors.primary
-                                      .withOpacity(0.2)),
-                            ),
-                            child: Text(
-                              'Report community concerns and help make\nDigos City better for everyone.',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w500,
-                                height: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 36),
+                        const SizedBox(height: 32),
 
                         // ── Form card ──────────────────────────────────
                         Container(
@@ -195,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen>
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.navy.withOpacity(0.09),
+                                color: AppColors.navy.withValues(alpha: 0.09),
                                 blurRadius: 28,
                                 offset: const Offset(0, 10),
                               ),
@@ -204,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // ── Header ─────────────────────────────
+                              // ── Card header ────────────────────────
                               Row(
                                 children: [
                                   Container(
@@ -212,42 +253,44 @@ class _LoginScreenState extends State<LoginScreen>
                                     height: 40,
                                     decoration: BoxDecoration(
                                       color: AppColors.navy
-                                          .withOpacity(0.08),
+                                          .withValues(alpha: 0.08),
                                       borderRadius:
                                           BorderRadius.circular(12),
                                     ),
-                                    child: const Icon(
-                                        Icons.phone_android_rounded,
-                                        color: AppColors.navy,
-                                        size: 20),
+                                    child: const Icon(Icons.login_rounded,
+                                        color: AppColors.navy, size: 20),
                                   ),
                                   const SizedBox(width: 12),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Enter your phone number',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.textPrimary,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Login',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.textPrimary,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        "We'll send a 6-digit OTP to verify.",
-                                        style: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          color: AppColors.textSecondary,
+                                        Text(
+                                          'Welcome back! Please login to your account.',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 22),
+                              const SizedBox(height: 24),
 
-                              // ── Mobile number label ────────────────
+                              // ── Phone number ───────────────────────
                               Text(
                                 'Mobile Number',
                                 style: GoogleFonts.inter(
@@ -257,8 +300,6 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ),
                               const SizedBox(height: 8),
-
-                              // ── Phone input ────────────────────────
                               TextFormField(
                                 controller: _phoneController,
                                 keyboardType: TextInputType.phone,
@@ -281,10 +322,6 @@ class _LoginScreenState extends State<LoginScreen>
                                   filled: true,
                                   fillColor: AppColors.inputFill,
                                   prefixIcon: _PhonePrefixWidget(),
-                                  suffixIcon: const Icon(
-                                      Icons.phone_rounded,
-                                      color: AppColors.textHint,
-                                      size: 20),
                                   contentPadding:
                                       const EdgeInsets.symmetric(
                                           horizontal: 16, vertical: 16),
@@ -321,81 +358,88 @@ class _LoginScreenState extends State<LoginScreen>
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 22),
+                              const SizedBox(height: 18),
 
-                              // ── Send OTP button ────────────────────
+                              // ── Password (6-digit PIN) ─────────────
+                              Text(
+                                'Password',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              _PinPasswordField(
+                                onChanged: (v) =>
+                                    setState(() => _pin = v),
+                                obscure: _obscurePin,
+                                onToggleObscure: () => setState(
+                                    () => _obscurePin = !_obscurePin),
+                              ),
+                              const SizedBox(height: 10),
+
+                              // ── Forgot password ────────────────────
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      showForgotPasswordFlow(context),
+                                  child: Text(
+                                    'Forgot Password?',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.navy,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // ── Login button ───────────────────────
                               PrimaryButton(
-                                label: 'Send OTP',
-                                icon: Icons.send_rounded,
+                                label: 'Login',
+                                icon: Icons.login_rounded,
                                 isLoading: _isLoading,
-                                onPressed: _sendOtp,
+                                onPressed: _login,
                                 backgroundColor: AppColors.primary,
                                 borderRadius: 14,
                                 height: 52,
-                              ),
-                              const SizedBox(height: 18),
-
-                              // ── Privacy note ───────────────────────
-                              Center(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.lock_outline_rounded,
-                                        size: 13,
-                                        color: AppColors.textSecondary),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      "We'll never share your number with anyone.",
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
                             ],
                           ),
                         ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 22),
 
-                        // ── Already have an account ────────────────────
+                        // ── Register link ──────────────────────────────
                         Center(
-                          child: RichText(
-                            text: TextSpan(
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: AppColors.textSecondary,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "Don't have an account? ",
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
-                              children: [
-                                const TextSpan(
-                                    text: 'Already have an account? '),
-                                WidgetSpan(
-                                  alignment:
-                                      PlaceholderAlignment.baseline,
-                                  baseline: TextBaseline.alphabetic,
-                                  child: GestureDetector(
-                                    onTap: () => Navigator.pushNamed(
-                                        context, AppRoutes.otp,
-                                        arguments: {
-                                          'phone': '',
-                                          'isNewUser': false,
-                                        }),
-                                    child: Text(
-                                      'Login',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.navy,
-                                        decoration:
-                                            TextDecoration.underline,
-                                      ),
-                                    ),
+                              GestureDetector(
+                                onTap: () => Navigator.pushNamed(
+                                    context, AppRoutes.register),
+                                child: Text(
+                                  'Register',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.navy,
+                                    decoration: TextDecoration.underline,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
 
@@ -419,7 +463,104 @@ class _LoginScreenState extends State<LoginScreen>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Phone prefix widget (+63 flag)
+// 6-digit PIN password field (single text input, obscurable)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PinPasswordField extends StatefulWidget {
+  final void Function(String) onChanged;
+  final bool obscure;
+  final VoidCallback onToggleObscure;
+
+  const _PinPasswordField({
+    required this.onChanged,
+    required this.obscure,
+    required this.onToggleObscure,
+  });
+
+  @override
+  State<_PinPasswordField> createState() => _PinPasswordFieldState();
+}
+
+class _PinPasswordFieldState extends State<_PinPasswordField> {
+  final _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: _ctrl,
+      keyboardType: TextInputType.number,
+      obscureText: widget.obscure,
+      obscuringCharacter: '●',
+      maxLength: 6,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      onChanged: widget.onChanged,
+      style: GoogleFonts.inter(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: AppColors.navy,
+        letterSpacing: 6,
+      ),
+      textAlign: TextAlign.center,
+      decoration: InputDecoration(
+        counterText: '',
+        hintText: widget.obscure ? '● ● ● ● ● ●' : '0 0 0 0 0 0',
+        hintStyle: GoogleFonts.inter(
+          fontSize: 16,
+          color: AppColors.textHint,
+          letterSpacing: 4,
+        ),
+        filled: true,
+        fillColor: AppColors.inputFill,
+        prefixIcon: const Icon(Icons.lock_outline_rounded,
+            color: AppColors.textSecondary, size: 20),
+        suffixIcon: IconButton(
+          icon: Icon(
+            widget.obscure
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+          onPressed: widget.onToggleObscure,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide:
+              const BorderSide(color: AppColors.navy, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide:
+              const BorderSide(color: Color(0xFFDC2626)),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide:
+              const BorderSide(color: Color(0xFFDC2626), width: 2),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phone prefix (+63 flag)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PhonePrefixWidget extends StatelessWidget {
@@ -429,17 +570,12 @@ class _PhonePrefixWidget extends StatelessWidget {
       margin: const EdgeInsets.only(left: 12, right: 4),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: const BoxDecoration(
-        border: Border(
-          right: BorderSide(color: AppColors.inputBorder),
-        ),
+        border: Border(right: BorderSide(color: AppColors.inputBorder)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '🇵🇭',
-            style: const TextStyle(fontSize: 16),
-          ),
+          const Text('🇵🇭', style: TextStyle(fontSize: 16)),
           const SizedBox(width: 4),
           Text(
             '+63',
@@ -459,7 +595,7 @@ class _PhonePrefixWidget extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Phone number formatter: 9XX XXX XXXX
+// Phone formatter: 9XX XXX XXXX
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PhoneNumberFormatter extends TextInputFormatter {
@@ -481,7 +617,7 @@ class _PhoneNumberFormatter extends TextInputFormatter {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Trust badge row
+// Trust badges row
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _TrustBadgeRow extends StatelessWidget {
@@ -519,7 +655,7 @@ class _TrustBadgeRow extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Logo Badge
+// Logo badge
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _LogoBadge extends StatelessWidget {
@@ -536,7 +672,7 @@ class _LogoBadge extends StatelessWidget {
         color: AppColors.navy,
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withOpacity(0.3),
+            color: AppColors.navy.withValues(alpha: 0.3),
             blurRadius: 22,
             offset: const Offset(0, 7),
           ),
@@ -546,7 +682,8 @@ class _LogoBadge extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Icon(Icons.shield_rounded,
-              color: AppColors.white.withOpacity(0.10), size: size * 0.82),
+              color: AppColors.white.withValues(alpha: 0.10),
+              size: size * 0.82),
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -563,7 +700,7 @@ class _LogoBadge extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// City Skyline illustration (bottom decoration)
+// City skyline bottom decoration
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _CitySkyline extends StatelessWidget {
@@ -584,7 +721,8 @@ class _SkylinePainter extends CustomPainter {
     final groundPaint = Paint()..color = const Color(0xFFD8EAF0);
 
     canvas.drawRect(
-        Rect.fromLTWH(0, size.height * 0.7, size.width, size.height * 0.3),
+        Rect.fromLTWH(
+            0, size.height * 0.7, size.width, size.height * 0.3),
         groundPaint);
 
     final buildings = [
@@ -598,7 +736,6 @@ class _SkylinePainter extends CustomPainter {
       [0.82, 0.28, 0.1, 0.42],
       [0.93, 0.4, 0.07, 0.3],
     ];
-
     for (final b in buildings) {
       canvas.drawRect(
         Rect.fromLTWH(size.width * b[0], size.height * b[1],
@@ -606,9 +743,8 @@ class _SkylinePainter extends CustomPainter {
         buildingPaint,
       );
     }
-
     final windowPaint = Paint()
-      ..color = const Color(0xFFE8F4FD).withOpacity(0.8);
+      ..color = const Color(0xFFE8F4FD).withValues(alpha: 0.8);
     for (final b in buildings) {
       final bx = size.width * b[0];
       final by = size.height * b[1];
@@ -624,14 +760,12 @@ class _SkylinePainter extends CustomPainter {
         }
       }
     }
-
-    final treeTrunkPaint = Paint()..color = const Color(0xFFB5A08A);
-    final treePositions = [0.05, 0.28, 0.52, 0.68, 0.88];
-    for (final tx in treePositions) {
+    final trunkPaint = Paint()..color = const Color(0xFFB5A08A);
+    for (final tx in [0.05, 0.28, 0.52, 0.68, 0.88]) {
       final x = size.width * tx;
       final y = size.height * 0.58;
       canvas.drawRect(
-          Rect.fromLTWH(x + 8, y + 22, 6, 16), treeTrunkPaint);
+          Rect.fromLTWH(x + 8, y + 22, 6, 16), trunkPaint);
       canvas.drawCircle(Offset(x + 11, y + 16), 16, treePaint);
     }
   }

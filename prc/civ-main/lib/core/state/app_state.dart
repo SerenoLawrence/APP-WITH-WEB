@@ -7,6 +7,20 @@ import '../utils/helpers.dart';
 /// Simple in-memory ChangeNotifier state manager.
 /// No backend — all data lives here for the prototype.
 class AppState extends ChangeNotifier {
+  // ── Auth / session ────────────────────────────────────────────────────────
+  bool _isGuest = false;
+  bool get isGuest => _isGuest;
+
+  void enterAsGuest() {
+    _isGuest = true;
+    notifyListeners();
+  }
+
+  void exitGuest() {
+    _isGuest = false;
+    notifyListeners();
+  }
+
   // ── Singleton ─────────────────────────────────────────────────────────────
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
@@ -24,6 +38,10 @@ class AppState extends ChangeNotifier {
 
   List<IncidentReport> get reports => List.unmodifiable(_reports);
 
+  /// Public getter for community reports — used by visitor screens.
+  List<IncidentReport> get communityReportsPublic =>
+      List.unmodifiable(_communityReports);
+
   /// Looks up by ID in both own reports and community reports.
   IncidentReport? getById(String id) {
     try {
@@ -31,6 +49,21 @@ class AppState extends ChangeNotifier {
     } catch (_) {}
     try {
       return _communityReports.firstWhere((r) => r.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Looks up by reference number (case-insensitive) across all report pools.
+  IncidentReport? getByReference(String refNumber) {
+    final q = refNumber.trim().toUpperCase();
+    try {
+      return _reports.firstWhere(
+          (r) => r.referenceNumber.toUpperCase() == q);
+    } catch (_) {}
+    try {
+      return _communityReports.firstWhere(
+          (r) => r.referenceNumber.toUpperCase() == q);
     } catch (_) {
       return null;
     }

@@ -1,233 +1,269 @@
-# CIVILWATCH Admin Dashboard
+# CIVILWATCH — Full-Stack Project
 
-**Project Type:** Capstone Project Prototype  
-**Target Platform:** Web Dashboard (HTML/CSS/JavaScript)  
-**Location:** Digos City
+**CIVILWATCH: A Geotagged Community Infrastructure and Environmental Incident Reporting, Management, and Monitoring System for Digos City.**
 
----
-
-## Overview
-
-CIVILWATCH is a Geotagged Community Infrastructure and Environmental Incident Reporting, Management, and Monitoring System for Digos City. This is the **Administrator Web Dashboard** for reviewing, validating, assigning, and monitoring incident reports submitted by residents.
+> University of Mindanao — Digos Branch | BS Information Technology | Capstone 2026
+> Proponents: Renz Justine Y. Borinaga, Jhon Carlo Mag-Usara, Lawrence Roy P. Sereno
+> Adviser: Cyvil Dave Dasargo, MIT
 
 ---
 
-## Getting Started
+## Project Overview
 
-**No installation required!** Just open `index.html` in any modern browser.
+CIVILWATCH is a full-stack system with three components that all work together:
 
-### Login Credentials (Demo)
-- **Username:** `admin` (or any username)
-- **Password:** `admin123` (or any password)
-
----
-
-## Pages
-
-| Page | File | Description |
-|------|------|-------------|
-| Login | `index.html` | Administrator login page |
-| Dashboard | `dashboard.html` | Overview with stats, recent reports, map, and activity feed |
-| Pending Reports | `pending-reports.html` | Review and validate newly submitted reports |
-| Report Details | `report-details.html` | Detailed view with photo, info, map, timeline, approve/reject |
-| Assign Office | `assign-office.html` | Assign validated reports to City Engineering or CENRO |
-| Monitoring | `monitoring.html` | Track progress of assigned reports with status updates |
-| GIS Map | `gis-map.html` | Interactive Leaflet map showing all report locations |
-| Analytics | `analytics.html` | Charts showing trends, top issues, barangays, status distribution |
-| Resolved Reports | `resolved-reports.html` | Archive of all completed reports |
+| Component | Technology | Location | Status |
+|---|---|---|---|
+| Admin Web Dashboard | HTML5 + CSS3 + Vanilla JS | `prc/` (web files) | ✅ Complete (prototype) |
+| Citizen Mobile App | Flutter / Dart | `prc/civ-main/` | ✅ Built (prototype — no backend yet) |
+| Backend API | Laravel 12 + PHP + MySQL | `prc/laravel/` | ✅ Built (API ready, needs DB connection) |
 
 ---
 
-## Features
+## Architecture
 
-### ✅ Fully Interactive
-- **Login System** — Demo authentication (any credentials work)
-- **Sidebar** — Collapse/expand navigation
-- **Notifications** — Slide-in panel with mark all as read
-- **Live Search & Filters** — Real-time table filtering on all report pages
-- **Map Integration** — Leaflet.js maps on Dashboard, GIS Map, and Report Details
-- **Charts** — Chart.js analytics (line, horizontal bar, doughnut)
-- **Modals** — Approve, reject, assign, and update progress flows
-- **Toast Notifications** — Success/error feedback
-- **Tab Filters** — Status-based filtering on Monitoring page
-- **Report Timeline** — Visual progress tracker with status steps
-
-### 📦 Technologies Used
-- **HTML5** — Semantic structure
-- **CSS3** — Modern, responsive design with CSS Variables
-- **Vanilla JavaScript** — No frameworks, pure DOM manipulation
-- **Leaflet.js** — Interactive maps
-- **Chart.js** — Data visualization
-- **Material Symbols** — Icon system
-- **Unsplash API** — High-quality incident photos
+```
+┌─────────────────────────┐     ┌──────────────────────────┐
+│   Admin Web Dashboard   │     │  Citizen Mobile App      │
+│   HTML + CSS + JS        │     │  Flutter / Dart          │
+│   (Browser)              │     │  (Android / iOS)         │
+└────────────┬────────────┘     └─────────────┬────────────┘
+             │  REST API                       │  REST API
+             │  /api/admin/*                   │  /api/mobile/*
+             └─────────────────┬───────────────┘
+                               │
+                ┌──────────────▼──────────────┐
+                │   Laravel 12 Backend         │
+                │   PHP + Sanctum Auth         │
+                │   prc/laravel/               │
+                └──────────────┬───────────────┘
+                               │  Eloquent ORM
+                               ▼
+                        ┌─────────────┐
+                        │   MySQL DB  │
+                        │  civilwatch │
+                        └─────────────┘
+```
 
 ---
 
 ## Folder Structure
 
 ```
-civilwatch-admin/
-├── index.html                 # Login page
-├── dashboard.html             # Main dashboard
-├── pending-reports.html       # Validation queue
-├── report-details.html        # Detailed report view
-├── assign-office.html         # Office assignment
-├── monitoring.html            # Progress tracking
-├── gis-map.html              # Geographic map view
-├── analytics.html            # Charts & statistics
-├── resolved-reports.html     # Completed reports
+APP-WITH-WEB/
+├── prc/
+│   ├── civ-main/          # Flutter citizen mobile app
+│   │   ├── lib/           # Dart source code
+│   │   ├── android/       # Android build files
+│   │   ├── ios/           # iOS build files
+│   │   └── pubspec.yaml   # Flutter dependencies
+│   │
+│   ├── laravel/           # Laravel backend API
+│   │   ├── app/           # Controllers, Models, Middleware
+│   │   ├── routes/        # api.php — all API endpoints
+│   │   ├── database/      # Migrations + Seeders
+│   │   ├── resources/     # Blade views (admin web panel)
+│   │   ├── .env.example   # Environment variable template
+│   │   └── artisan        # Laravel CLI
+│   │
+│   └── [web admin files]  # HTML/CSS/JS admin dashboard
 │
-├── assets/
-│   ├── css/
-│   │   ├── variables.css     # CSS custom properties
-│   │   ├── global.css        # Base styles
-│   │   ├── layout.css        # Page layout
-│   │   ├── sidebar.css       # Navigation sidebar
-│   │   ├── navbar.css        # Top navigation + notifications
-│   │   ├── cards.css         # Card components
-│   │   ├── buttons.css       # Button styles
-│   │   ├── tables.css        # Data tables
-│   │   ├── badges.css        # Status & category badges
-│   │   ├── forms.css         # Form inputs & controls
-│   │   ├── charts.css        # Chart containers
-│   │   ├── map.css           # Map-specific styles
-│   │   └── responsive.css    # Mobile breakpoints
-│   │
-│   ├── js/
-│   │   ├── app.js            # Sidebar, navbar, notifications
-│   │   └── utils.js          # Helper functions, image URLs
-│   │
-│   └── data/
-│       ├── reports.json      # Sample report data (18 reports)
-│       ├── analytics.json    # Chart data
-│       └── barangays.json    # Barangay coordinates (26 locations)
+├── civilwatch.sql          # Database schema reference
+├── README.md               # This file
+├── FEATURES.md             # Full feature list across all components
+├── FINAL_STATUS.md         # Build completion status
+├── PROJECT_STATUS.md       # Detailed task progress
+├── SESSION_PROGRESS.md     # Current session log and next tasks
+├── SYSTEM_DESIGN.md        # Architecture, ERD, DFD, Use Cases
+├── PRODUCTION_PROMPT.md    # Prompt for production implementation sessions
+└── PROMPT_REFERENCE.md     # Master context prompt for new sessions
 ```
 
 ---
 
-## Image Sources
+## Quick Start
 
-All incident photos are sourced from **Unsplash** (free, high-quality stock photos):
+### 1. Run the Laravel Backend
 
-| Issue Type | Source |
-|------------|--------|
-| Damaged Road | Pothole/road damage photos |
-| Illegal Dumping | Garbage/waste photos |
-| Damaged Sidewalk | Cracked pavement photos |
-| Blocked Drainage | Water/flood photos |
-| Overgrown Vegetation | Overgrown plants/weeds |
-| Broken Streetlight | Street lamp photos |
-| Soil Erosion | Erosion/landslide photos |
-| Road Sign Damage | Traffic sign photos |
+```bash
+# Navigate to the Laravel folder
+cd prc/laravel
 
-Images are automatically fetched via Unsplash CDN with optimized sizes:
-- **Table thumbnails:** 400×300px
-- **Detail pages:** 800×500px
+# Copy environment file
+copy .env.example .env
+
+# Edit .env — set your MySQL credentials
+# DB_CONNECTION=mysql
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=civilwatch
+# DB_USERNAME=root
+# DB_PASSWORD=your_password
+
+# Install PHP dependencies
+composer install
+
+# Generate app key
+php artisan key:generate
+
+# Run database migrations
+php artisan migrate
+
+# Seed default data (admin account + offices + announcements)
+php artisan db:seed
+
+# Link storage for photo uploads
+php artisan storage:link
+
+# Start the development server
+php artisan serve
+# → Runs at http://127.0.0.1:8000
+```
+
+**Default admin login after seeding:**
+- Email: `admin@civilwatch.ph`
+- Password: `Admin@2026!`
+
+### 2. Open the Admin Web Panel
+
+Visit: `http://127.0.0.1:8000/admin/login`
+
+Or open `prc/[web files]/index.html` directly in a browser for the static prototype.
+
+### 3. Run the Flutter App
+
+```bash
+cd prc/civ-main
+flutter pub get
+flutter run
+```
+
+> The Flutter app currently uses in-memory dummy data. To connect it to the Laravel backend, update `lib/core/constants/api_constants.dart` with the base URL `http://10.0.2.2:8000/api/mobile` (Android emulator) or `http://127.0.0.1:8000/api/mobile` (web/desktop).
 
 ---
 
-## Design Inspiration
+## API Endpoints (Laravel)
 
-- **Material Design 3** — Modern Google design language
-- **Google Maps** — Map interface and interaction patterns
-- **GCash / Maya Business** — Clean financial dashboard aesthetic
-- **Linear** — Minimal, professional UI
+### Health Check
+```
+GET /api/ping  →  { "success": true, "message": "CivilWatch API is running." }
+```
 
-### Color Palette
+### Citizen Mobile App (`/api/mobile/...`)
 
-- **Primary Blue:** `#1A56DB`
-- **Pending Yellow:** `#F59E0B`
-- **In Progress Orange:** `#F97316`
-- **Resolved Green:** `#10B981`
-- **Background:** `#F9FAFB`
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| POST | `/api/mobile/auth/send-otp` | Send OTP to phone number | Public |
+| POST | `/api/mobile/auth/verify-otp` | Verify OTP, get token | Public |
+| POST | `/api/mobile/auth/register` | Register new citizen | Public |
+| GET | `/api/mobile/announcements` | City announcements | Public |
+| POST | `/api/mobile/auth/logout` | Logout | Token |
+| GET | `/api/mobile/auth/me` | Citizen profile | Token |
+| GET | `/api/mobile/reports` | My reports | Token |
+| POST | `/api/mobile/reports` | Submit new report | Token |
+| GET | `/api/mobile/reports/community` | Community map reports | Token |
+| GET | `/api/mobile/reports/{id}` | Report detail + activity log | Token |
+| GET | `/api/mobile/notifications` | Notifications | Token |
+| POST | `/api/mobile/notifications/mark-all-read` | Mark all read | Token |
+| POST | `/api/mobile/notifications/{id}/read` | Mark one read | Token |
+
+### Admin Web Panel (`/api/admin/...`)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/admin/citizen-reports` | List all citizen reports |
+| GET | `/api/admin/citizen-reports/summary` | Dashboard stat counts |
+| GET | `/api/admin/citizen-reports/map` | Map pins (lat/lng) |
+| GET | `/api/admin/citizen-reports/{id}` | Report detail |
+| POST | `/api/admin/citizen-reports/{id}/validate` | Validate/approve report |
+| POST | `/api/admin/citizen-reports/{id}/assign` | Assign to office |
+| POST | `/api/admin/citizen-reports/{id}/status` | Update status |
+| GET/POST/PUT/DELETE | `/api/admin/offices` | Manage government offices |
+| GET/POST/PUT/DELETE | `/api/admin/announcements` | Manage announcements |
+
+---
+
+## User Roles
+
+| Role | System | Access |
+|---|---|---|
+| Super Admin | Admin Web + API | Validate reports, assign offices, manage users, all analytics |
+| CEO | Admin Web + API | Infrastructure reports assigned to City Engineering Office |
+| CENRO | Admin Web + API | Environmental reports assigned to CENRO |
+| Citizen | Flutter Mobile App | Submit reports, track status, view community map |
+
+---
+
+## Report Status Flow
+
+```
+Citizen Submits
+      ↓
+Pending Validation  ←  Super Admin reviews
+      ↓
+Assigned to Office  ←  Super Admin assigns to CEO or CENRO
+      ↓
+In Progress         ←  Office working on the issue
+      ↓
+Resolved            ←  Office marks resolved + uploads after photo
+```
 
 ---
 
 ## Report Categories
 
-### 🏗️ Infrastructure
-- Broken Streetlight
-- Damaged Road
-- Damaged Sidewalk
-- Blocked Drainage
-- Damaged Bridge
-- Road Sign Damage
-
-### 🌿 Environmental
-- Illegal Dumping
+**Infrastructure → City Engineering Office (CEO)**
+- Road Repair
+- Road Graveling
+- Streetlight / Light Pole Concern
 - Blocked Canal
-- Overgrown Vegetation
-- Soil Erosion
+- Others
+
+**Environmental → CENRO**
+- Illegal Dumping
+- Garbage Collection
 
 ---
 
-## Status Flow
+## Technologies Used
 
-```
-Submitted
-    ↓
-Pending Validation (Super Admin reviews)
-    ↓
-Assigned to Office (City Engineering / CENRO)
-    ↓
-In Progress (Office working on issue)
-    ↓
-Resolved
-```
+| Layer | Technology |
+|---|---|
+| Admin Frontend | HTML5, CSS3, Vanilla JavaScript, Leaflet.js, Chart.js |
+| Citizen Mobile App | Flutter, Dart, flutter_map, OpenStreetMap |
+| Backend | Laravel 12, PHP, Laravel Sanctum |
+| Database | MySQL |
+| Auth (Admin) | Sanctum email + password tokens |
+| Auth (Citizen) | Sanctum phone + OTP + PIN tokens |
+| Maps | Leaflet.js (web), flutter_map (mobile), OpenStreetMap tiles |
 
 ---
 
-## Browser Support
+## Demo Credentials (Web Prototype / Static)
 
-- ✅ Chrome 90+
-- ✅ Firefox 88+
-- ✅ Safari 14+
-- ✅ Edge 90+
+| Role | Username | Password |
+|---|---|---|
+| Super Administrator | `admin` | `admin123` |
+| City Engineering Officer | `ceo` | `ceo123` |
+| CENRO Administrator | `cenro` | `cenro123` |
 
----
-
-## Prototype Limitations
-
-This is a **UI/UX prototype** for capstone defense. No backend implementation:
-
-- ❌ No real database
-- ❌ No user authentication validation
-- ❌ No data persistence (refresh resets everything)
-- ❌ Pagination is visual only (first page shown)
-- ❌ Some pages (Users, Settings) are linked but not built
+**Laravel backend credentials (after seeding):**
+- Email: `admin@civilwatch.ph` · Password: `Admin@2026!`
 
 ---
 
-## Credits
+## Project Info
 
-**Developed by:**  
-Renz Justine Y. Borinaga  
-Jhon Carlo Mag-Usara  
-Lawrence Roy P. Sereno  
-
-**University of Mindanao**  
-Branch: Digos City  
-Program: Bachelor of Science in Information Technology  
-Academic Year: 2026
-
-**Project Advisor:**  
-Cyvil Dave Dasargo, MIT
+| | |
+|---|---|
+| **System** | CIVILWATCH — Geotagged Community Incident Reporting System |
+| **Location** | Digos City, Davao del Sur |
+| **University** | University of Mindanao — Digos Branch |
+| **Program** | BS Information Technology |
+| **Year** | 2026 |
+| **Proponents** | Renz Justine Y. Borinaga, Jhon Carlo Mag-Usara, Lawrence Roy P. Sereno |
+| **Adviser** | Cyvil Dave Dasargo, MIT |
 
 ---
 
-## License
-
-This project is for **educational purposes only** as part of a capstone project requirement.
-
----
-
-## Notes
-
-- All data is **dummy/sample data** for demonstration
-- Photos are from Unsplash and used under their free license
-- No personal information is collected or stored
-- System is designed for **Digos City Government** context
-
----
-
-**Last Updated:** May 21, 2026
+*Last Updated: August 13, 2026*
